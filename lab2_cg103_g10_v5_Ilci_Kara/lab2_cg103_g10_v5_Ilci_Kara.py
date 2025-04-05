@@ -4,9 +4,9 @@ class CSP:
         Initialization of the CSP class
 
         Parameters:
-        - variables
-        - domains
-        - constraints
+        - variables: list of variables (regions)
+        - domains: dictionary mapping variables to their domains (possible colors)
+        - constraints: dictionary mapping variables to their neighbors
         """
         self.variables = variables
         self.domains = domains
@@ -89,17 +89,16 @@ class CSP:
         return None
 
 
-def find_minimum_colors(map_constraints, max_colors=10):
+def solve_map_coloring(map_constraints, num_colors):
     """
-    Find the minimum number of colors needed to color the map.
+    Solve the map coloring problem with a fixed number of colors.
 
     Parameters:
     - map_constraints: dict mapping each region to its neighboring regions
-    - max_colors: maximum number of colors to try
+    - num_colors: fixed number of colors to use
 
     Returns:
-    - min_colors: minimum number of colors needed
-    - solution: the coloring solution
+    - solution: the coloring solution or None if no solution exists
     """
     variables = list(map_constraints.keys())
     all_colors = [
@@ -115,28 +114,68 @@ def find_minimum_colors(map_constraints, max_colors=10):
         "brown",
     ]
 
-    for num_colors in range(1, min(max_colors + 1, len(all_colors) + 1)):
-        colors = all_colors[:num_colors]
-        domains = {var: colors[:] for var in variables}
-        csp = CSP(variables, domains, map_constraints)
-        solution = csp.solve()
+    # Validate inputs
+    if not isinstance(num_colors, int) or num_colors <= 0:
+        raise ValueError("Number of colors must be a positive integer")
 
+    if num_colors > len(all_colors):
+        raise ValueError(
+            f"This implementation supports maximum {len(all_colors)} colors"
+        )
+
+    # Use only the specified number of colors
+    colors = all_colors[:num_colors]
+    domains = {var: colors[:] for var in variables}
+
+    # Check if the map is valid
+    for region, neighbors in map_constraints.items():
+        if not isinstance(neighbors, list):
+            raise ValueError(f"Neighbors for region {region} must be a list")
+        for neighbor in neighbors:
+            if neighbor not in map_constraints:
+                raise ValueError(
+                    f"Neighbor {neighbor} of region {region} is not defined in the map"
+                )
+
+    # Solve the CSP
+    csp = CSP(variables, domains, map_constraints)
+    solution = csp.solve()
+    return solution
+
+
+def find_minimum_colors(map_constraints, max_colors=10):
+    """
+    Find the minimum number of colors needed to color the map.
+
+    Parameters:
+    - map_constraints: dict mapping each region to its neighboring regions
+    - max_colors: maximum number of colors to try
+
+    Returns:
+    - min_colors: minimum number of colors needed
+    - solution: the coloring solution
+    """
+    for num_colors in range(1, max_colors + 1):
+        solution = solve_map_coloring(map_constraints, num_colors)
         if solution is not None:
             return num_colors, solution
 
-    return max_colors, None
+    # If no solution found with max_colors, return None
+    return None, None
 
 
 import matplotlib.pyplot as plt
 import networkx as nx
-from matplotlib.widgets import Button
 
 
-def visualize_map(constraints, solution, min_colors, ax, title):
+def visualize_map(constraints, solution, color_count):
     """
     Visualize the map coloring graph with an elegant, minimalist style.
     """
-    ax.clear()
+    # Create figure
+    fig = plt.figure(figsize=(10, 8), facecolor="#ffffff")
+    ax = fig.add_subplot(111)
+
     G = nx.Graph()
     for region, neighbors in constraints.items():
         G.add_node(region)
@@ -144,16 +183,7 @@ def visualize_map(constraints, solution, min_colors, ax, title):
             G.add_edge(region, neighbor)
 
     # Determine layout based on graph structure
-    if "A1" in G.nodes and "B1" in G.nodes and len(G.nodes) == 10:
-        # Bipartite layout
-        pos = {}
-        a_nodes = [n for n in G.nodes if n.startswith("A")]
-        b_nodes = [n for n in G.nodes if n.startswith("B")]
-        for i, node in enumerate(sorted(a_nodes)):
-            pos[node] = [-0.7, 0.7 - (i * 0.35)]
-        for i, node in enumerate(sorted(b_nodes)):
-            pos[node] = [0.7, 0.7 - (i * 0.35)]
-    elif len(G.nodes) <= 10:
+    if len(G.nodes) <= 10:
         pos = nx.kamada_kawai_layout(G)
     else:
         pos = nx.spring_layout(G, seed=42, k=0.7, iterations=100)
@@ -169,6 +199,8 @@ def visualize_map(constraints, solution, min_colors, ax, title):
         "orange": "#e76f51",
         "cyan": "#48cae4",
         "magenta": "#d62828",
+        "lime": "#84cc16",
+        "brown": "#8b4513",
     }
 
     # Color nodes
@@ -177,10 +209,10 @@ def visualize_map(constraints, solution, min_colors, ax, title):
             elegant_colors.get(solution.get(node, "gray"), "#adb5bd")
             for node in G.nodes()
         ]
-        title_text = f"{title} ({min_colors} colors)"
+        title_text = f"Map Coloring ({color_count} colors)"
     else:
         node_colors = ["#d3d3d3"] * len(G.nodes())
-        title_text = f"{title} (No solution)"
+        title_text = f"Map Coloring (No solution with {color_count} colors)"
 
     # Draw graph components
     nx.draw_networkx_edges(G, pos, ax=ax, width=1.0, edge_color="#888888", alpha=0.7)
@@ -209,7 +241,7 @@ def visualize_map(constraints, solution, min_colors, ax, title):
 
     # Set title and clean up axes
     ax.set_title(
-        title_text, fontsize=12, fontweight="medium", fontfamily="sans-serif", pad=10
+        title_text, fontsize=14, fontweight="medium", fontfamily="sans-serif", pad=10
     )
     ax.set_xticks([])
     ax.set_yticks([])
@@ -224,25 +256,28 @@ def visualize_map(constraints, solution, min_colors, ax, title):
         [min(p[1] for p in pos.values()) - 0.2, max(p[1] for p in pos.values()) + 0.2]
     )
 
+    plt.tight_layout()
+    plt.show()
 
-# Example of the input
-cmap = {}
-cmap["ab"] = ["bc", "nt", "sk"]
-cmap["bc"] = ["yt", "nt", "ab"]
-cmap["mb"] = ["sk", "nu", "on"]
-cmap["nb"] = ["qc", "ns", "pe"]
-cmap["ns"] = ["nb", "pe"]
-cmap["nl"] = ["qc"]
-cmap["nt"] = ["bc", "yt", "ab", "sk", "nu"]
-cmap["nu"] = ["nt", "mb"]
-cmap["on"] = ["mb", "qc"]
-cmap["pe"] = ["nb", "ns"]
-cmap["qc"] = ["on", "nb", "nl"]
-cmap["sk"] = ["ab", "mb", "nt"]
-cmap["yt"] = ["bc", "nt"]
+
+# Example of the input maps
+canada_map = {}
+canada_map["ab"] = ["bc", "nt", "sk"]
+canada_map["bc"] = ["yt", "nt", "ab"]
+canada_map["mb"] = ["sk", "nu", "on"]
+canada_map["nb"] = ["qc", "ns", "pe"]
+canada_map["ns"] = ["nb", "pe"]
+canada_map["nl"] = ["qc"]
+canada_map["nt"] = ["bc", "yt", "ab", "sk", "nu"]
+canada_map["nu"] = ["nt", "mb"]
+canada_map["on"] = ["mb", "qc"]
+canada_map["pe"] = ["nb", "ns"]
+canada_map["qc"] = ["on", "nb", "nl"]
+canada_map["sk"] = ["ab", "mb", "nt"]
+canada_map["yt"] = ["bc", "nt"]
 
 # Define other test maps
-constraints2 = {
+map1 = {
     "A": ["B", "C", "D"],
     "B": ["A", "C", "E"],
     "C": ["A", "B", "D", "F"],
@@ -253,7 +288,7 @@ constraints2 = {
     "H": ["E", "F", "G"],
 }
 
-constraints3 = {
+map2 = {
     "A": ["B", "D", "E"],
     "B": ["A", "C", "E", "F"],
     "C": ["B", "F", "G"],
@@ -264,10 +299,10 @@ constraints3 = {
     "H": ["D", "E", "F", "G"],
 }
 
-variables4 = ["A", "B", "C", "D", "E", "F", "G", "H"]
-constraints4 = {var: [v for v in variables4 if v != var] for var in variables4}
+variables = ["A", "B", "C", "D", "E", "F", "G", "H"]
+complete_map = {var: [v for v in variables if v != var] for var in variables}
 
-constraints5 = {
+cycle_map = {
     "A": ["B", "H"],
     "B": ["A", "C"],
     "C": ["B", "D"],
@@ -278,7 +313,7 @@ constraints5 = {
     "H": ["G", "A"],
 }
 
-constraints6 = {
+cross_map = {
     "A": ["B", "D", "E", "F"],
     "B": ["A", "C", "F"],
     "C": ["B", "D", "G", "H"],
@@ -289,88 +324,11 @@ constraints6 = {
     "H": ["C", "D", "E", "G"],
 }
 
-bipartite_map = {
-    "A1": ["B1", "B2"],
-    "A2": ["B1", "B3"],
-    "A3": ["B2", "B4"],
-    "A4": ["B3", "B5"],
-    "A5": ["B4", "B5"],
-    "B1": ["A1", "A2"],
-    "B2": ["A1", "A3"],
-    "B3": ["A2", "A4"],
-    "B4": ["A3", "A5"],
-    "B5": ["A4", "A5"],
-}
-
-# Find minimum number of colors for all maps
-min_colors1, sol1 = find_minimum_colors(cmap)
-min_colors2, sol2 = find_minimum_colors(constraints2)
-min_colors3, sol3 = find_minimum_colors(constraints3)
-min_colors4, sol4 = find_minimum_colors(constraints4)
-min_colors5, sol5 = find_minimum_colors(constraints5)
-min_colors6, sol6 = find_minimum_colors(constraints6)
-min_colors7, sol7 = find_minimum_colors(bipartite_map)
-
-# Define test cases
-test_cases = [
-    ("Canada Map", cmap, sol1, min_colors1),
-    ("Complex Map 1", constraints2, sol2, min_colors2),
-    ("Complex Map 2", constraints3, sol3, min_colors3),
-    ("Complete Graph K8", constraints4, sol4, min_colors4),
-    ("Cycle Map", constraints5, sol5, min_colors5),
-    ("Cross Map", constraints6, sol6, min_colors6),
-    ("Bipartite Graph", bipartite_map, sol7, min_colors7),
-]
-
-
-# Interactive navigation
-class MapNavigator:
-    def __init__(self, test_cases):
-        self.test_cases = test_cases
-        self.current_idx = 0
-        self.total_cases = len(test_cases)
-
-        # Create figure and widgets
-        self.fig = plt.figure(figsize=(10, 8), facecolor="#ffffff")
-        self.ax = self.fig.add_subplot(111)
-        self.prev_button_ax = plt.axes([0.25, 0.05, 0.15, 0.05])
-        self.next_button_ax = plt.axes([0.60, 0.05, 0.15, 0.05])
-        self.prev_button = Button(self.prev_button_ax, "Previous Map")
-        self.next_button = Button(self.next_button_ax, "Next Map")
-        self.prev_button.on_clicked(self.prev_map)
-        self.next_button.on_clicked(self.next_map)
-
-        # Navigation indicator
-        self.text_ax = self.fig.text(
-            0.5,
-            0.01,
-            f"Map {self.current_idx + 1}/{self.total_cases}",
-            ha="center",
-            va="center",
-            fontsize=10,
-        )
-
-        # Set title and show first map
-        self.fig.suptitle("Map Coloring Problem Visualization", fontsize=14, y=0.98)
-        self.update_display()
-
-    def update_display(self):
-        title, constraints, solution, min_colors = self.test_cases[self.current_idx]
-        visualize_map(constraints, solution, min_colors, self.ax, title)
-        self.text_ax.set_text(f"Map {self.current_idx + 1}/{self.total_cases}")
-        self.fig.canvas.draw_idle()
-
-    def prev_map(self, event):
-        self.current_idx = (self.current_idx - 1) % self.total_cases
-        self.update_display()
-
-    def next_map(self, event):
-        self.current_idx = (self.current_idx + 1) % self.total_cases
-        self.update_display()
-
-
-# Show the interactive visualization
-navigator = MapNavigator(test_cases)
-plt.tight_layout()
-plt.subplots_adjust(bottom=0.15)
-plt.show()
+# Show the visualization for a single map
+if __name__ == "__main__":
+    # Choose one map to visualize
+    map_to_show = map1  # choosable maps : canada_map, map1, map2, complete_map, cycle_map, cross_map
+    num_colors = 4  # Set the number of colors to use
+    # Solve and visualize
+    solution = solve_map_coloring(map_to_show, num_colors)
+    visualize_map(map_to_show, solution, num_colors)
