@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 3: Evolutionary and Genetic Algorithms - Bora ILCI & Kaan Emre KARA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        h1 {
+            font-size: 2.8em;
+            color: #1a5276;
+            text-align: center; /* Horizontally center main title */
+        }
+        h2 {
+            color: #2874a6;
+            text-align: center; /* Horizontally center h2 titles */
+        }
+        h3 {
+            color: #3498db;
+            text-align: center; /* Horizontally center h3 titles */
+        }
+        .subtitle {
+            font-size: 1.2em;
+            color: #7f8c8d;
+            margin-top: -10px;
+            margin-bottom: 30px;
+            text-align: center; /* Center subtitle as well */
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+            object-fit: contain;
+        }
+        div[align="center"] {
+            text-align: center;
+            margin: 20px 0;
+        }
+        em {
+            font-style: italic;
+            color: #666;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        /* Preserve the span color styles from the markdown */
+        span[style] {
+            display: inline;
+        }
+        /* Add a subtle border to the page */
+        body {
+            border: 1px solid #eee;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        /* Override colors for spans that might have non-blue colors */
+        span[style*="color:#0e7c3f"] {
+            color: #2980b9 !important; /* Change to blue */
+        }
+        span[style*="color:#d35400"] {
+            color: #3498db !important; /* Change to blue */
+        }
+        span[style*="color:#c0392b"] {
+            color: #1a5276 !important; /* Change to dark blue */
+        }
+        span[style*="color:#e74c3c"] {
+            color: #2874a6 !important; /* Change to medium blue */
+        }
+    </style>
+</head>
+<body>
+    <h1>Lab 3: Evolutionary and Genetic Algorithms</h1>
+    <div class="subtitle">Bora ILCI & Kaan Emre KARA</div>
+    
+    
+<h2><span style="color:#2980b9">Task Description</span></h2>
+<p>This report presents the implementation and evaluation of a genetic algorithm designed to optimize the Styblinski-Tang function in 2D space. The algorithm utilizes Gaussian mutation operators and random interpolation for crossover, with tournament selection for parent selection. The implementation follows standard genetic algorithm principles while adapting specific operators for real-valued optimization problems.</p>
+<h2><span style="color:#2980b9">Implementation Details</span></h2>
+<p>The genetic algorithm was implemented with the following components:</p>
+<ol>
+<li>
+<p><strong><span style="color:#8a2be2">Population Representation</span></strong>: Each individual is represented as a 2D point (x, y) within the search space of the Styblinski-Tang function.</p>
+</li>
+<li>
+<p><strong><span style="color:#8a2be2">Selection Mechanism</span></strong>: Tournament selection is used to select parents for reproduction, where a subset of individuals competes, and the one with the best fitness (lowest function value) wins.</p>
+</li>
+<li>
+<p><strong><span style="color:#8a2be2">Crossover Operator</span></strong>: Random interpolation crossover is implemented where for parents p1 and p2, offspring are created using the formula:</p>
+</li>
+<li>
+<p><code>xo = α * xp1 + (1 - α) * xp2</code></p>
+</li>
+<li><code>yo = α * yp1 + (1 - α) * yp2</code></li>
+<li>
+<p>where α is a random value between 0 and 1</p>
+</li>
+<li>
+<p><strong><span style="color:#8a2be2">Mutation Operator</span></strong>: Gaussian mutation is applied with a specified probability and strength, adding normally distributed random values to the coordinates of selected individuals.</p>
+</li>
+<li>
+<p><strong><span style="color:#8a2be2">Population Management</span></strong>: A portion of the population undergoes crossover and mutation, while the rest remains unchanged, providing a balance between exploration and exploitation.</p>
+</li>
+</ol>
+<h2><span style="color:#2980b9">Experimental Results and Analysis</span></h2>
+<h3><span style="color:#3498db">Experiment 1: Parameter Tuning</span></h3>
+<p>Multiple parameter combinations were tested to identify optimal settings for the genetic algorithm. The table below shows the tested combinations and their results:</p>
+<table>
+<thead>
+<tr>
+<th><span style="color:#1a5276">Population</span></th>
+<th><span style="color:#1a5276">Mutation Rate</span></th>
+<th><span style="color:#1a5276">Mutation Strength</span></th>
+<th><span style="color:#1a5276">Crossover Rate</span></th>
+<th><span style="color:#1a5276">Generations</span></th>
+<th><span style="color:#1a5276">Best Fitness</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>0.05</td>
+<td>0.3</td>
+<td>0.8</td>
+<td>100</td>
+<td>-78.330846</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.1</td>
+<td>0.5</td>
+<td>0.9</td>
+<td>100</td>
+<td>-78.330335</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.1</td>
+<td>0.5</td>
+<td>0.7</td>
+<td>100</td>
+<td>-78.328824</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.2</td>
+<td>0.5</td>
+<td>0.7</td>
+<td>100</td>
+<td>-78.326910</td>
+</tr>
+<tr>
+<td>50</td>
+<td>0.1</td>
+<td>0.5</td>
+<td>0.7</td>
+<td>100</td>
+<td>-78.313867</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.1</td>
+<td>1.0</td>
+<td>0.7</td>
+<td>100</td>
+<td>-78.297112</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<img src="experiment1_pop100_mut0.05_str0.3_cross0.8.png" alt="Best Parameter Configuration" width="550"/>
+<p><em>Figure 1: Convergence of the best parameter configuration (Pop=100, Mut=0.05, Str=0.3, Cross=0.8)</em></p>
+</div>
+
+<p><strong><span style="color:#3498db">Observations</span></strong>:</p>
+<ul>
+<li>The algorithm consistently converged to values very close to the known global minimum of the Styblinski-Tang function (-78.332).</li>
+<li>A population size of 100 generally outperformed smaller populations.</li>
+<li>Lower mutation rates (0.05) with moderate strength (0.3) provided the best results.</li>
+<li>Higher crossover rates (0.8-0.9) improved the algorithm's performance.</li>
+<li>For most parameter sets, convergence occurred within the first 30-40 generations.</li>
+</ul>
+<p>The best parameter set was identified as: <span style="color:#16a085">population size = 100, mutation rate = 0.05, mutation strength = 0.3, and crossover rate = 0.8</span>.</p>
+<h3><span style="color:#3498db">Experiment 2: Randomness and Population Size</span></h3>
+<p>The algorithm was run with the best parameters using 5 different random seeds to evaluate stability:</p>
+<ul>
+<li>Best overall solution: <span style="color:#16a085">(-2.9055147925995857, -2.9058449128707746)</span></li>
+<li>Best overall fitness: <span style="color:#16a085">-78.332171</span></li>
+<li>Average fitness: -78.330128</li>
+<li>Standard deviation: 0.002621</li>
+</ul>
+<p>The algorithm was then rerun with decreasing population sizes while keeping other parameters constant:</p>
+<table>
+<thead>
+<tr>
+<th><span style="color:#1a5276">Population Size</span></th>
+<th><span style="color:#1a5276">% of Original</span></th>
+<th><span style="color:#1a5276">Best Fitness</span></th>
+<th><span style="color:#1a5276">Avg Fitness</span></th>
+<th><span style="color:#1a5276">Std. Deviation</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100</td>
+<td>100%</td>
+<td>-78.332171</td>
+<td>-78.330128</td>
+<td>0.002621</td>
+</tr>
+<tr>
+<td>50</td>
+<td>50%</td>
+<td>-78.332331</td>
+<td>-78.331080</td>
+<td>0.001788</td>
+</tr>
+<tr>
+<td>25</td>
+<td>25%</td>
+<td>-78.332064</td>
+<td>-75.495085</td>
+<td>5.649763</td>
+</tr>
+<tr>
+<td>10</td>
+<td>10%</td>
+<td>-78.311152</td>
+<td>-72.647041</td>
+<td>6.904230</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<img src="experiment1_pop50_mut0.1_str0.5_cross0.7.png" alt="Population Size 50 Experiment" width="550"/>
+<p><em>Figure 2: Convergence pattern with population size of 50</em></p>
+</div>
+
+<p><strong><span style="color:#3498db">Observations</span></strong>:</p>
+<ul>
+<li>The algorithm showed consistent results across different random seeds, indicating robust performance.</li>
+<li>Surprisingly, a population size of 50 (50% of original) achieved slightly better average results with lower standard deviation.</li>
+<li>Significant performance degradation occurred with population sizes of 25 or below, with much higher variance in results.</li>
+<li>At very small population sizes (10), the algorithm frequently failed to converge to the global optimum.</li>
+</ul>
+<p>This experiment revealed that while genetic algorithms can work with smaller populations, there's a critical threshold below which performance becomes unpredictable.</p>
+<h3><span style="color:#3498db">Experiment 3: Crossover Impact</span></h3>
+<p>The influence of crossover rate on algorithm performance was evaluated by varying the rate from 0.0 to 1.0:</p>
+<table>
+<thead>
+<tr>
+<th><span style="color:#1a5276">Crossover Rate</span></th>
+<th><span style="color:#1a5276">Best Fitness (Avg. across seeds)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.0</td>
+<td>-78.327535</td>
+</tr>
+<tr>
+<td>0.25</td>
+<td>-78.330734</td>
+</tr>
+<tr>
+<td>0.5</td>
+<td>-78.328455</td>
+</tr>
+<tr>
+<td>0.75</td>
+<td>-78.332191</td>
+</tr>
+<tr>
+<td>1.0</td>
+<td>-78.329337</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<img src="experiment3_crossover_impact.png" alt="Crossover Impact Visualization" width="550"/>
+<p><em>Figure 3: Impact of different crossover rates on algorithm performance</em></p>
+</div>
+
+<p><strong><span style="color:#3498db">Observations</span></strong>:</p>
+<ul>
+<li>Even without crossover (rate = 0.0), the algorithm performed reasonably well, indicating that mutation alone can explore the search space effectively.</li>
+<li>A crossover rate of 0.75 provided the best balance between exploration and exploitation.</li>
+<li>The performance difference across different crossover rates was relatively small, suggesting that the algorithm is somewhat robust to this parameter.</li>
+<li>Crossover contributed to faster convergence in early generations but showed diminishing returns in later generations.</li>
+</ul>
+<h3><span style="color:#3498db">Experiment 4: Mutation and Convergence</span></h3>
+<p>The impact of mutation parameters on convergence was studied by testing various combinations of mutation rates and strengths:</p>
+<table>
+<thead>
+<tr>
+<th><span style="color:#1a5276">Mutation Rate</span></th>
+<th><span style="color:#1a5276">Mutation Strength</span></th>
+<th><span style="color:#1a5276">Best Fitness (Avg. across seeds)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.01</td>
+<td>0.1</td>
+<td>-78.331001</td>
+</tr>
+<tr>
+<td>0.05</td>
+<td>0.3</td>
+<td>-78.331158</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>0.5</td>
+<td>-78.330539</td>
+</tr>
+<tr>
+<td>0.2</td>
+<td>0.7</td>
+<td>-78.331665</td>
+</tr>
+<tr>
+<td>0.3</td>
+<td>1.0</td>
+<td>-78.325567</td>
+</tr>
+</tbody>
+</table>
+<div align="center">
+<img src="experiment4_mutation_impact.png" alt="Mutation Impact Visualization" width="550"/>
+<p><em>Figure 4: Effect of mutation parameters on optimization performance</em></p>
+</div>
+
+<div align="center">
+<img src="experiment1_pop100_mut0.1_str1.0_cross0.7.png" alt="High Mutation Strength Experiment" width="550"/>
+<p><em>Figure 5: Behavior with high mutation strength (1.0)</em></p>
+</div>
+
+<p><strong><span style="color:#3498db">Observations</span></strong>:</p>
+<ul>
+<li>Low mutation rates (0.01-0.05) with small strengths provided consistent convergence.</li>
+<li>Medium mutation rates (0.1-0.2) with moderate strengths showed slightly higher variance but still good performance.</li>
+<li>High mutation rates (0.3) with large strengths led to more erratic behavior, sometimes hampering convergence.</li>
+<li>Mutation played a crucial role in fine-tuning solutions after the algorithm reached the vicinity of the optimum.</li>
+<li>A mutation rate of 0.2 with strength 0.7 achieved the best average performance, though with slightly higher variance.</li>
+</ul>
+<h2><span style="color:#2980b9">Conclusion</span></h2>
+<p>The genetic algorithm successfully optimized the Styblinski-Tang function, consistently finding solutions very close to the known global minimum of -78.332 at the point (-2.903534, -2.903534). The best solution found across all experiments was <span style="color:#16a085">(-2.903536, -2.903530)</span> with a fitness value of <span style="color:#16a085">-78.332331</span>, which is remarkably close to the theoretical optimum.</p>
+<div align="center">
+<img src="experiment1_pop100_mut0.2_str0.5_cross0.7.png" alt="Solution Visualization" width="550"/>
+<p><em>Figure 6: Visualization of the algorithm's convergence to the global optimum</em></p>
+</div>
+
+<p>Key insights from the experiments include:</p>
+<ol>
+<li>
+<p><strong><span style="color:#2874a6">Parameter Balance</span></strong>: The optimal performance required balancing exploration and exploitation through appropriate mutation and crossover rates.</p>
+</li>
+<li>
+<p><strong><span style="color:#2874a6">Population Size</span></strong>: While larger populations generally provided more consistent results, a moderate population size (50) was sufficient to achieve excellent performance with lower computational cost.</p>
+</li>
+<li>
+<p><strong><span style="color:#2874a6">Mutation Dynamics</span></strong>: Mutation played a dual role - enabling broad exploration in early generations and fine-tuning in later generations.</p>
+</li>
+<li>
+<p><strong><span style="color:#2874a6">Convergence Speed</span></strong>: The algorithm typically converged to near-optimal solutions within 30-40 generations, with diminishing improvements thereafter.</p>
+</li>
+<li>
+<p><strong><span style="color:#2874a6">Robustness</span></strong>: The algorithm demonstrated reasonable robustness to parameter variations, though certain combinations (particularly population size) had critical thresholds below which performance degraded.</p>
+</li>
+</ol>
+<p>These findings highlight the effectiveness of genetic algorithms for optimization problems and demonstrate their ability to navigate complex search spaces when properly tuned.</p>
+</body>
+</html>
