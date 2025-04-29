@@ -39,7 +39,7 @@ class PlotManager:
         if not self.figures:
             print("No figures to store.")
             return
-        
+
         print(f"Stored {len(self.figures)} figures in memory.")
 
     def show_gallery(self):
