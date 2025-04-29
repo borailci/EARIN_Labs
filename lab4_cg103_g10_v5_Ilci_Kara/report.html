@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4: Regression And Classification - Bora ILCI & Kaan Emre KARA</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        h1, h2, h3 {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: #1a365d;
+            margin-top: 1.5em;
+        }
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            margin-bottom: 0.5em;
+            color: #2d3748;
+            border-bottom: 3px solid #4299e1;
+            padding-bottom: 0.3em;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2.5em;
+            padding: 2em;
+            background-color: #ebf8ff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .authors {
+            font-size: 1.2em;
+            color: #4a5568;
+            margin-bottom: 0.5em;
+        }
+        .date {
+            font-size: 0.9em;
+            color: #718096;
+        }
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #edf2f7;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        tr:nth-child(even) {
+            background-color: #f7fafc;
+        }
+        tr:hover {
+            background-color: #ebf4ff;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .image-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .caption {
+            font-style: italic;
+            margin-top: 10px;
+            color: #718096;
+            font-size: 0.95em;
+        }
+        .highlight {
+            background-color: #e6fffa;
+            padding: 15px;
+            border-left: 5px solid #38b2ac;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        ul, ol {
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        p {
+            margin-bottom: 1em;
+        }
+        a {
+            color: #3182ce;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Lab 4: Regression And Classification</h1>
+        <div class="authors">Bora ILCI & Kaan Emre KARA</div>
+        <div class="date">April 29, 2025</div>
+    </div>
+
+    <div class="container">
+        <h2>1. Introduction and Dataset Description</h2>
+        <p>This report analyzes the wine dataset, which contains chemical properties of wines derived from three different cultivars. The task is to classify wines into their respective types (classes) based on their chemical properties. The dataset includes 13 features such as alcohol content, flavanoids, and color intensity, with each instance belonging to one of three wine classes.</p>
+    </div>
+
+    <div class="container">
+        <h2>2. Data Preparation and Feature Analysis</h2>
+        <p>The wine dataset comprises 13 chemical features. Before model training, we conducted a thorough analysis to understand feature distributions, correlations, and importance.</p>
+
+        <h3>2.1 Feature Distributions</h3>
+        <div class="image-container">
+            <img src="feature_distributions.png" alt="Feature Distributions">
+            <div class="caption">Figure 1: Histogram visualizations of the feature distributions in the wine dataset</div>
+        </div>
+        <p>The histograms reveal varying distributions across features. Some features like alcohol and proline appear to have multimodal distributions, potentially indicating their discriminative power between wine classes.</p>
+
+        <h3>2.2 Feature Correlation Analysis</h3>
+        <div class="image-container">
+            <img src="feature_correlation_matrix.png" alt="Feature Correlation Matrix">
+            <div class="caption">Figure 2: Correlation matrix showing relationships between features</div>
+        </div>
+        <p>The correlation matrix reveals several moderately to strongly correlated features. For instance, there is a strong positive correlation between flavanoids and total phenols (0.86), and between color intensity and OD280/OD315 (0.65). While these correlations suggest potential redundancy, we chose to retain all features for the following reasons:</p>
+        <ul>
+            <li>The dataset is relatively small (178 samples), so the risk of overfitting due to dimensionality is low</li>
+            <li>Both selected algorithms (SVM and Random Forest) are generally robust to correlated features</li>
+            <li>Preserving all features allows the models to capture potentially useful subtle relationships</li>
+        </ul>
+
+        <h3>2.3 Feature Importance Analysis</h3>
+        <div class="image-container">
+            <img src="feature_importance_(anova_f-test).png" alt="Feature Importance (ANOVA F-test)">
+            <div class="caption">Figure 3: Feature importance based on ANOVA F-test</div>
+        </div>
+        <p>The ANOVA F-test revealed several highly discriminative features, with proline, flavanoids, and color intensity emerging as the most important predictors for wine classification. While we could have considered dimensionality reduction based on this analysis, we opted to retain all features since:</p>
+        <div class="highlight">
+            <p>Even features with lower F-scores might capture nuanced relationships valuable for classification. Both SVM and Random Forest models can effectively handle the full feature set, with Random Forest providing its own measure of feature importance during training.</p>
+        </div>
+
+        <h3>2.4 Data Preprocessing</h3>
+        <p>We applied StandardScaler normalization to all features before model training. This step is crucial because:</p>
+        <ul>
+            <li>Features have different units and scales (e.g., alcohol percentage vs. mg/L measurements)</li>
+            <li>Support Vector Machines are sensitive to feature scaling</li>
+            <li>Normalization ensures all features contribute proportionally to distance calculations</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>3. Model Selection</h2>
+        <p>For the wine classification task, we selected two models:</p>
+        
+        <h3>3.1 Support Vector Machine (SVM)</h3>
+        <p>We chose SVM for the following reasons:</p>
+        <ul>
+            <li>Effective for high-dimensional data with clear margins between classes</li>
+            <li>Strong performance in classification tasks with moderate-sized datasets</li>
+            <li>Flexibility through kernel functions to capture non-linear relationships</li>
+            <li>Robust to overfitting when properly regularized</li>
+        </ul>
+
+        <h3>3.2 Random Forest</h3>
+        <p>We selected Random Forest as our second model because:</p>
+        <ul>
+            <li>Ensemble method that combines multiple decision trees for robust predictions</li>
+            <li>Handles both linear and non-linear relationships effectively</li>
+            <li>Less sensitive to outliers than many other algorithms</li>
+            <li>Provides built-in feature importance measures</li>
+            <li>Less prone to overfitting than single decision trees</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h2>4. Model Training and Parameter Tuning</h2>
+        <p>We used 4-fold cross-validation to evaluate different parameter configurations for both models, with accuracy as our evaluation metric. This approach helps identify optimal parameters while reducing the risk of overfitting.</p>
+
+        <h3>4.1 SVM Parameter Tuning</h3>
+        <p>We explored various combinations of SVM parameters:</p>
+        <table>
+            <tr>
+                <th>Parameters</th>
+                <th>Mean Cross-Validation Accuracy</th>
+                <th>Standard Deviation</th>
+            </tr>
+            <tr>
+                <td>C=1, kernel=rbf, gamma=scale</td>
+                <td>0.9716</td>
+                <td>±0.0218</td>
+            </tr>
+            <tr>
+                <td>C=10, kernel=rbf, gamma=scale</td>
+                <td>0.9789</td>
+                <td>±0.0214</td>
+            </tr>
+            <tr>
+                <td>C=100, kernel=rbf, gamma=scale</td>
+                <td>0.9789</td>
+                <td>±0.0214</td>
+            </tr>
+            <tr>
+                <td>C=1, kernel=rbf, gamma=auto</td>
+                <td>0.9507</td>
+                <td>±0.0303</td>
+            </tr>
+            <tr>
+                <td>C=10, kernel=rbf, gamma=auto</td>
+                <td>0.9648</td>
+                <td>±0.0320</td>
+            </tr>
+            <tr>
+                <td>C=1, kernel=linear</td>
+                <td>0.9648</td>
+                <td>±0.0204</td>
+            </tr>
+            <tr>
+                <td>C=10, kernel=linear</td>
+                <td>0.9648</td>
+                <td>±0.0204</td>
+            </tr>
+        </table>
+        <p>The best performance was achieved with C=10, kernel=rbf, and gamma=scale, suggesting that a non-linear decision boundary with moderate regularization works best for this dataset.</p>
+
+        <h3>4.2 Random Forest Parameter Tuning</h3>
+        <p>We explored various combinations of Random Forest parameters:</p>
+        <table>
+            <tr>
+                <th>Parameters</th>
+                <th>Mean Cross-Validation Accuracy</th>
+                <th>Standard Deviation</th>
+            </tr>
+            <tr>
+                <td>n_estimators=50, max_depth=None</td>
+                <td>0.9648</td>
+                <td>±0.0320</td>
+            </tr>
+            <tr>
+                <td>n_estimators=100, max_depth=None</td>
+                <td>0.9716</td>
+                <td>±0.0218</td>
+            </tr>
+            <tr>
+                <td>n_estimators=100, max_depth=10</td>
+                <td>0.9789</td>
+                <td>±0.0214</td>
+            </tr>
+            <tr>
+                <td>n_estimators=200, max_depth=None</td>
+                <td>0.9716</td>
+                <td>±0.0218</td>
+            </tr>
+            <tr>
+                <td>n_estimators=200, max_depth=15</td>
+                <td>0.9716</td>
+                <td>±0.0218</td>
+            </tr>
+            <tr>
+                <td>n_estimators=300, max_depth=None</td>
+                <td>0.9716</td>
+                <td>±0.0218</td>
+            </tr>
+            <tr>
+                <td>n_estimators=100, max_depth=5, min_samples_split=5</td>
+                <td>0.9648</td>
+                <td>±0.0312</td>
+            </tr>
+        </table>
+        <p>The best performance was achieved with n_estimators=100 and max_depth=10, suggesting that a moderate number of trees with controlled depth provides good generalization for this dataset.</p>
+    </div>
+
+    <div class="container">
+        <h2>5. Model Evaluation and Comparison</h2>
+        
+        <h3>5.1 Performance Metrics</h3>
+        <p>After training models with the best parameters identified through cross-validation, we evaluated their performance on the test set, which constituted 20% of the original dataset.</p>
+
+        <h3>5.2 Random Forest Feature Importance</h3>
+        <div class="image-container">
+            <img src="random_forest_feature_importance.png" alt="Random Forest Feature Importance">
+            <div class="caption">Figure 4: Feature importance as determined by the Random Forest model</div>
+        </div>
+        <p>The Random Forest's internal feature importance measure largely aligns with the ANOVA F-test results, confirming the relevance of features like proline, flavanoids, and color intensity for wine classification. This consistency across different analytical methods reinforces our confidence in the feature selection approach.</p>
+
+        <h3>5.3 Confusion Matrices</h3>
+        <div class="image-container">
+            <img src="confusion_matrices.png" alt="Confusion Matrices">
+            <div class="caption">Figure 5: Confusion matrices for SVM and Random Forest models</div>
+        </div>
+        <p>The confusion matrices reveal the classification performance across the three wine classes. Both models perform exceptionally well, with very few misclassifications. This visualization helps identify specific class pairs that might be more challenging to distinguish.</p>
+
+        <h3>5.4 Model Comparison</h3>
+        <p>Both models achieved high accuracy on the test set:</p>
+        <ul>
+            <li>SVM with optimal parameters (C=10, kernel=rbf, gamma=scale): 0.9722 accuracy</li>
+            <li>Random Forest with optimal parameters (n_estimators=100, max_depth=10): 0.9722 accuracy</li>
+        </ul>
+        <p>The identical performance suggests that the wine classes are well-separated in the feature space and can be effectively distinguished by both linear (SVM with linear kernel) and non-linear (SVM with RBF kernel and Random Forest) approaches.</p>
+    </div>
+
+    <div class="container">
+        <h2>6. Conclusion</h2>
+        <p>Our analysis of the wine dataset demonstrates that:</p>
+        <ul>
+            <li>The chemical properties of wine provide strong signals for classifying wines into their respective types</li>
+            <li>Feature normalization is essential for this dataset due to the varying scales of measurements</li>
+            <li>Both SVM and Random Forest models perform excellently on this task, with careful parameter tuning further enhancing their performance</li>
+            <li>Features like proline, flavanoids, and color intensity consistently emerge as the most important predictors across different analysis methods</li>
+        </ul>
+        <p>This project illustrates the effectiveness of machine learning approaches for wine classification based on chemical properties, potentially aiding in quality control and authentication in the wine industry.</p>
+    </div>
+</body>
+</html>
