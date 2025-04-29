@@ -115,6 +115,16 @@
         a:hover {
             text-decoration: underline;
         }
+        .code-block {
+            background-color: #f0f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            border: 1px solid #cbd5e0;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -130,39 +140,85 @@
     </div>
 
     <div class="container">
-        <h2>2. Data Preparation and Feature Analysis</h2>
-        <p>The wine dataset comprises 13 chemical features. Before model training, we conducted a thorough analysis to understand feature distributions, correlations, and importance.</p>
+        <h2>2. Visualization Management and Design</h2>
+        <p>For this project, we implemented an object-oriented approach to visualization using a custom <strong>PlotManager</strong> class. This design pattern offers several advantages:</p>
+        
+        <ul>
+            <li>Consistent styling and formatting across all visualizations</li>
+            <li>Centralized management of plot generation and storage</li>
+            <li>Support for both individual plot files and comprehensive multi-page reports</li>
+            <li>Interactive gallery viewer for exploring visualizations</li>
+        </ul>
 
-        <h3>2.1 Feature Distributions</h3>
+        <h3>2.1 PlotManager Implementation</h3>
+        <p>The PlotManager class provides an elegant solution for handling multiple visualization tasks:</p>
+        
+        <div class="code-block">
+            <pre>class PlotManager:
+    """
+    A class to manage all visualization aspects of the wine classification project.
+    Uses an object-oriented approach to handle plotting and saving figures.
+    """
+
+    def __init__(self, output_dir="", save_individual_plots=False):
+        """Initialize PlotManager with optional output directory"""
+        self.output_dir = output_dir
+        # Set a consistent style for all plots
+        sns.set_style("whitegrid")
+        # Set a consistent color palette
+        self.colors = sns.color_palette("viridis", 10)
+        # Set default figure size
+        plt.rcParams["figure.figsize"] = (10, 6)
+        # Store all figures for multi-page display
+        self.figures = []
+        self.figure_titles = []
+        # Whether to save individual plot files
+        self.save_individual_plots = save_individual_plots</pre>
+        </div>
+
+        <p>This implementation uses context managers for clean figure handling and converts matplotlib figures to PIL Images for efficient storage and display in the gallery:</p>
+
+        <div class="highlight">
+            <p>The PlotManager provides a unified interface for creating, storing, and displaying all data visualizations, ensuring consistent styling and efficient workflow throughout the analysis process.</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>3. Data Preparation and Feature Analysis</h2>
+        <p>The wine dataset comprises 13 chemical features. Before model training, we conducted a thorough analysis to understand feature distributions, correlations, and importance using our PlotManager class.</p>
+
+        <h3>3.1 Feature Distributions</h3>
         <div class="image-container">
             <img src="feature_distributions.png" alt="Feature Distributions">
             <div class="caption">Figure 1: Histogram visualizations of the feature distributions in the wine dataset</div>
         </div>
-        <p>The histograms reveal varying distributions across features. Some features like alcohol and proline appear to have multimodal distributions, potentially indicating their discriminative power between wine classes.</p>
+        <p>The histograms reveal varying distributions across features. Some features like alcohol and proline appear to have multimodal distributions, potentially indicating their discriminative power between wine classes. Our PlotManager's <code>plot_feature_distributions</code> method efficiently generates these histograms with consistent styling.</p>
 
-        <h3>2.2 Feature Correlation Analysis</h3>
+        <h3>3.2 Feature Correlation Analysis</h3>
         <div class="image-container">
             <img src="feature_correlation_matrix.png" alt="Feature Correlation Matrix">
             <div class="caption">Figure 2: Correlation matrix showing relationships between features</div>
         </div>
-        <p>The correlation matrix reveals several moderately to strongly correlated features. For instance, there is a strong positive correlation between flavanoids and total phenols (0.86), and between color intensity and OD280/OD315 (0.65). While these correlations suggest potential redundancy, we chose to retain all features for the following reasons:</p>
+        <p>The correlation matrix reveals several moderately to strongly correlated features. For instance, there is a strong positive correlation between flavanoids and total phenols (0.86), and between color intensity and OD280/OD315 (0.65). The <code>plot_correlation_matrix</code> method in our PlotManager uses an optimized approach that displays only the lower triangle of the matrix for improved readability while maintaining all correlation information.</p>
+        <p>While these correlations suggest potential redundancy, we chose to retain all features for the following reasons:</p>
         <ul>
             <li>The dataset is relatively small (178 samples), so the risk of overfitting due to dimensionality is low</li>
             <li>Both selected algorithms (SVM and Random Forest) are generally robust to correlated features</li>
             <li>Preserving all features allows the models to capture potentially useful subtle relationships</li>
         </ul>
 
-        <h3>2.3 Feature Importance Analysis</h3>
+        <h3>3.3 Feature Importance Analysis</h3>
         <div class="image-container">
             <img src="feature_importance_(anova_f-test).png" alt="Feature Importance (ANOVA F-test)">
             <div class="caption">Figure 3: Feature importance based on ANOVA F-test</div>
         </div>
-        <p>The ANOVA F-test revealed several highly discriminative features, with proline, flavanoids, and color intensity emerging as the most important predictors for wine classification. While we could have considered dimensionality reduction based on this analysis, we opted to retain all features since:</p>
+        <p>The ANOVA F-test revealed several highly discriminative features, with proline, flavanoids, and color intensity emerging as the most important predictors for wine classification. Our <code>plot_feature_importance</code> method automatically sorts features by importance and adds value labels to the bars for clearer interpretation.</p>
+        <p>While we could have considered dimensionality reduction based on this analysis, we opted to retain all features since:</p>
         <div class="highlight">
             <p>Even features with lower F-scores might capture nuanced relationships valuable for classification. Both SVM and Random Forest models can effectively handle the full feature set, with Random Forest providing its own measure of feature importance during training.</p>
         </div>
 
-        <h3>2.4 Data Preprocessing</h3>
+        <h3>3.4 Data Preprocessing</h3>
         <p>We applied StandardScaler normalization to all features before model training. This step is crucial because:</p>
         <ul>
             <li>Features have different units and scales (e.g., alcohol percentage vs. mg/L measurements)</li>
@@ -172,10 +228,10 @@
     </div>
 
     <div class="container">
-        <h2>3. Model Selection</h2>
+        <h2>4. Model Selection</h2>
         <p>For the wine classification task, we selected two models:</p>
         
-        <h3>3.1 Support Vector Machine (SVM)</h3>
+        <h3>4.1 Support Vector Machine (SVM)</h3>
         <p>We chose SVM for the following reasons:</p>
         <ul>
             <li>Effective for high-dimensional data with clear margins between classes</li>
@@ -184,7 +240,7 @@
             <li>Robust to overfitting when properly regularized</li>
         </ul>
 
-        <h3>3.2 Random Forest</h3>
+        <h3>4.2 Random Forest</h3>
         <p>We selected Random Forest as our second model because:</p>
         <ul>
             <li>Ensemble method that combines multiple decision trees for robust predictions</li>
@@ -196,10 +252,10 @@
     </div>
 
     <div class="container">
-        <h2>4. Model Training and Parameter Tuning</h2>
+        <h2>5. Model Training and Parameter Tuning</h2>
         <p>We used 4-fold cross-validation to evaluate different parameter configurations for both models, with accuracy as our evaluation metric. This approach helps identify optimal parameters while reducing the risk of overfitting.</p>
 
-        <h3>4.1 SVM Parameter Tuning</h3>
+        <h3>5.1 SVM Parameter Tuning</h3>
         <p>We explored various combinations of SVM parameters:</p>
         <table>
             <tr>
@@ -245,7 +301,7 @@
         </table>
         <p>The best performance was achieved with C=10, kernel=rbf, and gamma=scale, suggesting that a non-linear decision boundary with moderate regularization works best for this dataset.</p>
 
-        <h3>4.2 Random Forest Parameter Tuning</h3>
+        <h3>5.2 Random Forest Parameter Tuning</h3>
         <p>We explored various combinations of Random Forest parameters:</p>
         <table>
             <tr>
@@ -293,26 +349,56 @@
     </div>
 
     <div class="container">
-        <h2>5. Model Evaluation and Comparison</h2>
+        <h2>6. Model Evaluation and Comparison</h2>
         
-        <h3>5.1 Performance Metrics</h3>
+        <h3>6.1 Performance Metrics</h3>
         <p>After training models with the best parameters identified through cross-validation, we evaluated their performance on the test set, which constituted 20% of the original dataset.</p>
 
-        <h3>5.2 Random Forest Feature Importance</h3>
+        <h3>6.2 Random Forest Feature Importance</h3>
         <div class="image-container">
             <img src="random_forest_feature_importance.png" alt="Random Forest Feature Importance">
             <div class="caption">Figure 4: Feature importance as determined by the Random Forest model</div>
         </div>
-        <p>The Random Forest's internal feature importance measure largely aligns with the ANOVA F-test results, confirming the relevance of features like proline, flavanoids, and color intensity for wine classification. This consistency across different analytical methods reinforces our confidence in the feature selection approach.</p>
+        <p>The Random Forest's internal feature importance measure largely aligns with the ANOVA F-test results, confirming the relevance of features like proline, flavanoids, and color intensity for wine classification. Our PlotManager uses the same plotting function for both ANOVA and Random Forest importance, ensuring consistent visualization for easy comparison.</p>
 
-        <h3>5.3 Confusion Matrices</h3>
+        <h3>6.3 Confusion Matrices</h3>
         <div class="image-container">
             <img src="confusion_matrices.png" alt="Confusion Matrices">
             <div class="caption">Figure 5: Confusion matrices for SVM and Random Forest models</div>
         </div>
-        <p>The confusion matrices reveal the classification performance across the three wine classes. Both models perform exceptionally well, with very few misclassifications. This visualization helps identify specific class pairs that might be more challenging to distinguish.</p>
+        <p>The confusion matrices reveal the classification performance across the three wine classes. Both models perform exceptionally well, with very few misclassifications. Our <code>plot_confusion_matrices</code> method in PlotManager displays both raw counts and percentages in each cell, with a color-coded approach that makes interpretation intuitive.</p>
 
-        <h3>5.4 Model Comparison</h3>
+        <h3>6.4 Result Consolidation</h3>
+        <p>Our PlotManager class includes methods to compile all visualizations into a comprehensive PDF report:</p>
+        <div class="code-block">
+            <pre>def save_all_figures(self, output_file="wine_analysis_report.pdf"):
+    """Save all figures to a multi-page PDF"""
+    # Since we're storing PIL Images, not matplotlib figures,
+    # we need to create a PDF using PIL's functionality
+    if not self.figures:
+        print("No figures to save.")
+        return
+
+    # Create a list to hold the converted images
+    images = []
+
+    # Convert the first PIL image to RGB mode
+    first_img = self.figures[0].convert("RGB")
+
+    # Convert the remaining images (if any) to RGB mode and append to the list
+    if len(self.figures) > 1:
+        images = [img.convert("RGB") for img in self.figures[1:]]
+
+    # Save the first image and append the remaining images to the PDF file
+    first_img.save(
+        f"{self.output_dir}{output_file}", save_all=True, append_images=images
+    )
+    print(f"Saved {len(self.figures)} figures to {output_file}")</pre>
+        </div>
+        
+        <p>We also implemented an interactive gallery viewer that allows for dynamic exploration of all generated visualizations.</p>
+
+        <h3>6.5 Model Comparison</h3>
         <p>Both models achieved high accuracy on the test set:</p>
         <ul>
             <li>SVM with optimal parameters (C=10, kernel=rbf, gamma=scale): 0.9722 accuracy</li>
@@ -322,15 +408,17 @@
     </div>
 
     <div class="container">
-        <h2>6. Conclusion</h2>
+        <h2>7. Conclusion</h2>
         <p>Our analysis of the wine dataset demonstrates that:</p>
         <ul>
             <li>The chemical properties of wine provide strong signals for classifying wines into their respective types</li>
             <li>Feature normalization is essential for this dataset due to the varying scales of measurements</li>
+            <li>Object-oriented design principles enhance visualization workflows, leading to more consistent and maintainable code</li>
             <li>Both SVM and Random Forest models perform excellently on this task, with careful parameter tuning further enhancing their performance</li>
+            <li>Our PlotManager class provides a reusable framework for future analytical projects, with built-in support for interactive visualization exploration</li>
             <li>Features like proline, flavanoids, and color intensity consistently emerge as the most important predictors across different analysis methods</li>
         </ul>
-        <p>This project illustrates the effectiveness of machine learning approaches for wine classification based on chemical properties, potentially aiding in quality control and authentication in the wine industry.</p>
+        <p>This project illustrates the effectiveness of machine learning approaches for wine classification based on chemical properties, potentially aiding in quality control and authentication in the wine industry. Additionally, our visualization framework demonstrates how proper software engineering practices can enhance data science workflows.</p>
     </div>
 </body>
 </html>

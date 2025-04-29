@@ -3,7 +3,6 @@ import seaborn as sns
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import pandas as pd
-from matplotlib.backends.backend_pdf import PdfPages
 from contextlib import contextmanager
 import io
 from PIL import Image
@@ -36,28 +35,12 @@ class PlotManager:
         self.figure_titles.append(title)
 
     def save_all_figures(self, output_file="wine_analysis_report.pdf"):
-        """Save all figures to a multi-page PDF"""
-        # Since we're storing PIL Images, not matplotlib figures,
-        # we need to create a PDF using PIL's functionality
+        """Store all figures without creating PDF"""
         if not self.figures:
-            print("No figures to save.")
+            print("No figures to store.")
             return
-
-        # Create a list to hold the converted images
-        images = []
-
-        # Convert the first PIL image to RGB mode
-        first_img = self.figures[0].convert("RGB")
-
-        # Convert the remaining images (if any) to RGB mode and append to the list
-        if len(self.figures) > 1:
-            images = [img.convert("RGB") for img in self.figures[1:]]
-
-        # Save the first image and append the remaining images to the PDF file
-        first_img.save(
-            f"{self.output_dir}{output_file}", save_all=True, append_images=images
-        )
-        print(f"Saved {len(self.figures)} figures to {output_file}")
+        
+        print(f"Stored {len(self.figures)} figures in memory.")
 
     def show_gallery(self):
         """Display all figures in an interactive multi-page viewer"""

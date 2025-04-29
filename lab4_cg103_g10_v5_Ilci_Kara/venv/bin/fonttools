@@ -1,4 +1,4 @@
-#!/Users/borailci/Code/Python/EARIN_Lab4_template/venv/bin/python
+#!/Users/borailci/Code/Python/EARIN_Labs/EARIN_Labs/lab4_cg103_g10_v5_Ilci_Kara/venv/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys
