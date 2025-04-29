@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 5: Artificial Neural Networks - KMNIST Classification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .header-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        code {
+            background-color: #f7f7f7;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #f7f7f7;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .result-image {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+            border: 1px solid #ddd;
+        }
+        .conclusion {
+            background-color: #f8f9fa;
+            border-left: 5px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Introduction to Artificial Intelligence<br>Lab 5: Artificial Neural Networks</h1>
+    
+    <div class="header-info">
+        <p><strong>Course:</strong> Introduction to Artificial Intelligence</p>
+        <p><strong>Instructor:</strong> Daniel Marczak</p>
+        <p><strong>Date:</strong> Summer 2025</p>
+        <p><strong>Students:</strong> Bora Ilci, Kaya Kara</p>
+    </div>
+    
+    <div class="section">
+        <h2>1. Introduction</h2>
+        <p>This report presents the implementation and evaluation of a multilayer perceptron (MLP) for image classification on the KMNIST dataset. The neural network is trained using the mini-batch gradient descent method, with the dataset split into training and validation sets to monitor performance and prevent overfitting.</p>
+        
+        <p>The main objective of this lab is to evaluate how various components and hyperparameters of a neural network affect its performance in terms of:</p>
+        <ul>
+            <li>Ability to converge</li>
+            <li>Speed of convergence</li>
+            <li>Final accuracy on both training and validation sets</li>
+        </ul>
+        
+        <p>The lab investigates the effects of varying the following hyperparameters:</p>
+        <ul>
+            <li>Learning rate (0.001, 0.01, 0.1)</li>
+            <li>Mini-batch size (1, 32, 128)</li>
+            <li>Number of hidden layers (0, 1, 3)</li>
+            <li>Width of hidden layers (64, 128, 256 neurons)</li>
+            <li>Optimizer type (SGD, SGD with momentum, Adam)</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>2. Implementation</h2>
+        
+        <h3>2.1 Dataset - KMNIST</h3>
+        <p>The KMNIST (Kuzushiji-MNIST) dataset consists of 28×28 grayscale images of handwritten Japanese characters. The dataset is divided into 60,000 training examples and 10,000 test examples. For our experiments, we further split the training set into 80% for training and 20% for validation.</p>
+        
+        <h3>2.2 Network Architecture</h3>
+        <p>We implemented a multilayer perceptron (MLP) with the following components:</p>
+        <ul>
+            <li><strong>Input layer:</strong> 784 (28×28) neurons corresponding to flattened pixel values</li>
+            <li><strong>Hidden layers:</strong> Variable number (0-3) with variable width (64-256 neurons)</li>
+            <li><strong>Activation function:</strong> ReLU (Rectified Linear Unit)</li>
+            <li><strong>Output layer:</strong> 10 neurons (one for each class)</li>
+            <li><strong>Loss function:</strong> Cross-entropy loss</li>
+        </ul>
+        
+        <h3>2.3 Training Process</h3>
+        <p>For training the neural network, we implemented the following procedure:</p>
+        <ul>
+            <li>Data preprocessing: Normalization and flattening of the 28×28 images</li>
+            <li>Mini-batch gradient descent with various batch sizes</li>
+            <li>Different optimizers including SGD, SGD with momentum, and Adam</li>
+            <li>10 epochs of training for each experiment</li>
+            <li>Early stopping was not implemented, but we monitored validation accuracy to detect overfitting</li>
+        </ul>
+        
+        <h3>2.4 Implementation Details</h3>
+        <p>The implementation uses PyTorch for building neural network layers and handling gradient computations. The key components include:</p>
+        <ul>
+            <li>An MLP class that builds a network with configurable hidden layers and sizes</li>
+            <li>Custom training loop implementing mini-batch gradient descent</li>
+            <li>Experiment management with hyperparameter tracking</li>
+            <li>Result visualization and analysis tools</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>3. Experimental Results</h2>
+        
+        <h3>3.1 Effect of Learning Rate</h3>
+        <p>We tested three different learning rates: 0.001, 0.01, and 0.1, while keeping other parameters fixed (batch size = 32, hidden layers = 1, hidden size = 128, optimizer = SGD with momentum).</p>
+        
+        <img src="analysis/learning_rate_comparison.png" alt="Learning Rate Comparison" class="result-image">
+        <img src="analysis/learning_rate_time_comparison.png" alt="Learning Rate Time Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>A learning rate of 0.01 achieved the best validation accuracy (~94.25%)</li>
+            <li>A learning rate of 0.1 performed poorly (~30.47%), indicating the model couldn't converge properly due to overshooting</li>
+            <li>A learning rate of 0.001 reached a respectable validation accuracy (~92.24%), but converged more slowly</li>
+            <li>Training time was not significantly affected by the learning rate</li>
+        </ul>
+        
+        <h3>3.2 Effect of Batch Size</h3>
+        <p>We experimented with three different batch sizes: 1 (stochastic gradient descent), 32, and 128, while keeping other parameters fixed (learning rate = 0.01, hidden layers = 1, hidden size = 128, optimizer = SGD with momentum).</p>
+        
+        <img src="analysis/batch_size_comparison.png" alt="Batch Size Comparison" class="result-image">
+        <img src="analysis/batch_size_time_comparison.png" alt="Batch Size Time Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>A batch size of 32 achieved the best validation accuracy (~94.78%)</li>
+            <li>A batch size of 128 performed nearly as well (~94.62%), with faster training times</li>
+            <li>A batch size of 1 (stochastic gradient descent) performed extremely poorly (~9.87%), indicating high variance in updates prevented convergence</li>
+            <li>Training time was significantly affected by batch size, with smaller batches taking much longer to train</li>
+        </ul>
+        
+        <h3>3.3 Effect of Hidden Layers</h3>
+        <p>We evaluated the effect of varying the number of hidden layers: 0 (linear model), 1, and 3, while keeping other parameters fixed (learning rate = 0.01, batch size = 32, hidden size = 128, optimizer = SGD with momentum).</p>
+        
+        <img src="analysis/hidden_layers_comparison.png" alt="Hidden Layers Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>The model with 3 hidden layers achieved the best validation accuracy (~95.46%)</li>
+            <li>A single hidden layer also performed well (~93.86%)</li>
+            <li>The linear model (0 hidden layers) achieved a respectable validation accuracy (~79.57%), but significantly lower than models with hidden layers</li>
+            <li>The linear model took significantly longer to train, despite being a simpler model</li>
+        </ul>
+        
+        <h3>3.4 Effect of Hidden Size</h3>
+        <p>We tested three different hidden layer sizes: 64, 128, and 256 neurons, while keeping other parameters fixed (learning rate = 0.01, batch size = 32, hidden layers = 1, optimizer = SGD with momentum).</p>
+        
+        <img src="analysis/hidden_size_comparison.png" alt="Hidden Size Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>A hidden size of 256 neurons achieved the best validation accuracy (~95.3%)</li>
+            <li>Performance generally improved with larger hidden sizes</li>
+            <li>A hidden size of 64 neurons still achieved good performance (~92.71%), showing the model doesn't need excessive capacity for this task</li>
+            <li>Training time increased marginally with hidden size</li>
+        </ul>
+        
+        <h3>3.5 Effect of Optimizer Type</h3>
+        <p>We compared three different optimizers: SGD, SGD with momentum, and Adam, while keeping other parameters fixed (learning rate = 0.01, batch size = 32, hidden layers = 1, hidden size = 128).</p>
+        
+        <img src="analysis/optimizer_comparison.png" alt="Optimizer Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>SGD with momentum achieved the best validation accuracy (~95.09%)</li>
+            <li>Standard SGD also performed well (~92.69%)</li>
+            <li>Adam performed surprisingly poorly (~83.53%) given its typical strong performance, suggesting the learning rate may not have been optimal for this optimizer</li>
+        </ul>
+        
+        <h3>3.6 Training vs. Validation Accuracy</h3>
+        <p>We compared training and validation accuracies across all experiments to check for overfitting.</p>
+        
+        <img src="analysis/train_val_comparison.png" alt="Train vs. Validation Comparison" class="result-image">
+        
+        <p><strong>Observations:</strong></p>
+        <ul>
+            <li>Most models showed higher training accuracy than validation accuracy, as expected</li>
+            <li>The gap between training and validation accuracies was generally small, indicating limited overfitting</li>
+            <li>Failed models (e.g., batch size of 1) show similar poor performance on both training and validation sets</li>
+        </ul>
+    </div>
+    
+    <div class="section">
+        <h2>4. Summary and Best Model</h2>
+        <p>Based on our experiments, the best performing models were:</p>
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>Model Configuration</th>
+                <th>Validation Accuracy</th>
+                <th>Test Accuracy</th>
+                <th>Training Time (s)</th>
+            </tr>
+            <tr class="highlight">
+                <td>1</td>
+                <td>3 hidden layers, 128 neurons, lr=0.01, batch size=32, SGD with momentum</td>
+                <td>95.46%</td>
+                <td>89.16%</td>
+                <td>25.65</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>1 hidden layer, 256 neurons, lr=0.01, batch size=32, SGD with momentum</td>
+                <td>95.30%</td>
+                <td>89.53%</td>
+                <td>24.67</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>1 hidden layer, 128 neurons, lr=0.01, batch size=32, SGD with momentum</td>
+                <td>95.09%</td>
+                <td>87.93%</td>
+                <td>24.63</td>
+            </tr>
+        </table>
+        
+        <p>The worst performing models were:</p>
+        <table>
+            <tr>
+                <th>Rank</th>
+                <th>Model Configuration</th>
+                <th>Validation Accuracy</th>
+                <th>Test Accuracy</th>
+                <th>Training Time (s)</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>1 hidden layer, 128 neurons, lr=0.01, batch size=1, SGD with momentum</td>
+                <td>9.87%</td>
+                <td>10.01%</td>
+                <td>152.88</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>1 hidden layer, 128 neurons, lr=0.1, batch size=32, SGD with momentum</td>
+                <td>30.47%</td>
+                <td>22.56%</td>
+                <td>22.65</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>0 hidden layers (linear), lr=0.01, batch size=32, SGD with momentum</td>
+                <td>79.57%</td>
+                <td>67.01%</td>
+                <td>213.88</td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="section conclusion">
+        <h2>5. Conclusions</h2>
+        <p>From our experiments with the KMNIST dataset, we can draw the following conclusions about neural network hyperparameters:</p>
+        
+        <h3>5.1 Learning Rate</h3>
+        <p>The learning rate significantly affects model convergence. A too-high learning rate (0.1) can prevent convergence entirely, while a too-low rate (0.001) slows down training without necessarily improving final performance. A moderate learning rate (0.01) provided the best balance for our task.</p>
+        
+        <h3>5.2 Batch Size</h3>
+        <p>Batch size dramatically affects both training dynamics and computational efficiency:</p>
+        <ul>
+            <li>Using a batch size of 1 (stochastic gradient descent) led to extremely poor performance, likely due to high variance in updates</li>
+            <li>A medium batch size (32) provided the best accuracy</li>
+            <li>A larger batch size (128) offered similar performance with faster training times</li>
+        </ul>
+        
+        <h3>5.3 Network Architecture</h3>
+        <p>More complex architectures generally performed better:</p>
+        <ul>
+            <li>A linear model (0 hidden layers) achieved reasonable results but was outperformed by networks with hidden layers</li>
+            <li>Increasing the number of hidden layers from 1 to 3 improved performance</li>
+            <li>Increasing hidden layer width from 64 to 256 neurons consistently improved performance</li>
+        </ul>
+        
+        <h3>5.4 Optimizer Choice</h3>
+        <p>For this specific task with the given learning rate:</p>
+        <ul>
+            <li>SGD with momentum performed the best</li>
+            <li>Standard SGD was slightly worse but still effective</li>
+            <li>Adam performed surprisingly poorly, suggesting it needed different hyperparameters</li>
+        </ul>
+        
+        <h3>5.5 General Observations</h3>
+        <p>Several key takeaways from our experiments:</p>
+        <ul>
+            <li>The KMNIST dataset is complex enough to benefit from deeper and wider networks</li>
+            <li>Our models showed relatively small gaps between training and validation accuracy, suggesting limited overfitting during the 10 epochs</li>
+            <li>The training time was relatively insensitive to most parameter changes (except batch size and the linear model)</li>
+            <li>There was a noticeable gap between validation and test accuracy, indicating some generalization challenges</li>
+        </ul>
+        
+        <p>Overall, the best model achieved a validation accuracy of 95.46% and a test accuracy of 89.16%, demonstrating effective learning of the KMNIST classification task.</p>
+    </div>
+    
+    <div class="section">
+        <h2>6. References</h2>
+        <ul>
+            <li>Tarin Clanuwat et al. "Deep Learning for Classical Japanese Literature", arXiv:1812.01718 (for KMNIST dataset)</li>
+            <li>PyTorch Documentation: <a href="https://pytorch.org/docs/stable/index.html">https://pytorch.org/docs/stable/index.html</a></li>
+            <li>Course materials: "Introduction to Artificial Intelligence" by Daniel Marczak</li>
+        </ul>
+    </div>
+</body>
+</html>
