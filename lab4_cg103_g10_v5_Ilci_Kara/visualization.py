@@ -34,7 +34,7 @@ class PlotManager:
         self.figures.append(fig)
         self.figure_titles.append(title)
 
-    def save_all_figures(self, output_file="wine_analysis_report.pdf"):
+    def save_all_figures(self, output_file="project_pngs.pdf"):
         """Store all figures without creating PDF"""
         if not self.figures:
             print("No figures to store.")

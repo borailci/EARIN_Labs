@@ -204,10 +204,6 @@ def main():
 
     # Part 8: Visualization and Report Generation
     print("\n===== Generating Visualizations =====")
-
-    # Store figures in memory without creating PDF
-    plot_manager.save_all_figures()
-
     print("\nAnalysis complete!")
     print(
         "You can view an interactive gallery of all plots by uncommenting the last line in main.py."
