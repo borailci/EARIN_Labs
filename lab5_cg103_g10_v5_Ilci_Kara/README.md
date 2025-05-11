@@ -92,4 +92,4 @@ python analyze_results.py
 ## Authors
 
 - Bora Ilci
-- Mert Kara
+- Kaan Emre Kara
