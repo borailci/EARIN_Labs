@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preliminary Documentation - Gesture Recognition Project</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        h1, h2, h3 { color: #2a9d8f; }
+        h1 { border-bottom: 2px solid #2a9d8f; padding-bottom: 5px; }
+        section { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 8px; text-align: left; }
+        th { background-color: #264653; color: #fff; }
+        code { background-color: #e9ecef; padding: 2px 4px; border-radius: 4px; }
+        .metadata { font-style: italic; color: #555; }
+    </style>
+</head>
+<body>
+    <h1>Preliminary Documentation for Gesture Recognition Project</h1>
+    <p class="metadata">Authors: Bora ILCI &amp; Kaan Emre KARA | Group: 10 | Instructor: Valeriya Khan | Date: May 9, 2025</p>
+
+    <section>
+        <h2>1. Project Overview</h2>
+        <p><strong>Objective:</strong> Develop and evaluate a neural-network–based model for hand-gesture recognition, benchmarked against existing state-of-the-art methods.</p>
+        <p><strong>Scope:</strong> Classify 10 static/dynamic hand gestures using open-source datasets (<em>LeapGestRecog</em>), with potential augmentation from secondary sources.</p>
+    </section>
+
+    <section>
+        <h2>2. Algorithm Selection</h2>
+        <p>We will explore and compare the following algorithms:</p>
+        <table>
+            <tr><th>Algorithm</th><th>Description</th><th>Example Architecture / Reference</th></tr>
+            <tr>
+                <td><strong>CNN + LSTM</strong></td>
+                <td>2D CNN extracts spatial features per frame; LSTM captures temporal dynamics over embeddings.</td>
+                <td>CNN (3×3 kernels; [32,64,128] channels) → FC to 256-d vector → LSTM (128 units) → Dense Softmax<br><small>Donahue et al. (CVPR'15)</small></td>
+            </tr>
+            <tr>
+                <td><strong>3D-CNN</strong></td>
+                <td>3D convolutions over spatiotemporal volumes to learn joint features.</td>
+                <td>C3D: 8 conv layers (3×3×3 kernels) + 2 FC + Softmax<br><small>Tran et al. (ICCV'15)</small></td>
+            </tr>
+            <tr>
+                <td><strong>Transfer Learning</strong></td>
+                <td>Pretrained ResNet-18 extracts frame embeddings; temporal pooling or LSTM over them.</td>
+                <td>ResNet-18 backbone → Global Avg Pool → Dense Softmax<br><small>He et al. (CVPR'16)</small></td>
+            </tr>
+        </table>
+        <p><em>Chosen baseline for Phase 1:</em> CNN+LSTM (PyTorch), with 3D-CNN comparison.</p>
+    </section>
+
+    <section>
+        <h2>3. Dataset Selection &amp; Description</h2>
+        <h3>Primary Dataset: LeapGestRecog</h3>
+        <ul>
+            <li><strong>Source:</strong> GTI–UPM Gesture Dataset on Kaggle</li>
+            <li><strong>Content:</strong> 10 gesture classes; ~2,000 sequences; ~100 grayscale frames @84×84 each</li>
+            <li><strong>Preprocessing:</strong> Extract frames; resize to 64×64; normalize to [0,1]; folder-per-class</li>
+        </ul>
+        <h3>Secondary Dataset (Optional): SHREC Hand Gesture</h3>
+        <p><em>(Depth + RGB modalities for future multimodal extension)</em></p>
+    </section>
+
+    <section>
+        <h2>4. Library &amp; Tool Selection</h2>
+        <ul>
+            <li><strong>Framework:</strong> <code>PyTorch 1.13</code></li>
+            <li><strong>Preprocessing:</strong> OpenCV, NumPy, pandas</li>
+            <li><strong>Data Utilities:</strong> torch.utils.data.Dataset, DataLoader; torchvision.transforms</li>
+            <li><strong>Visualization &amp; Metrics:</strong> Matplotlib, Seaborn, scikit-learn, TensorBoard</li>
+            <li><strong>Code Quality:</strong> PEP 8 compliance; flake8 linting; docstrings &amp; comments</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>5. Experimental Plan</h2>
+        <ol>
+            <li><strong>Data Preparation:</strong> 70/15/15 train/val/test split; ensure class balance.</li>
+            <li><strong>Model Implementations:</strong> Baselines A: CNN+LSTM; B: 3D-CNN; C (if time): Transfer Learning.</li>
+            <li><strong>Training Protocol:</strong> 30 epochs; batch size 16; Adam (LR 1e−3); CrossEntropyLoss; LR scheduler; early stopping (patience 5).</li>
+            <li><strong>Hyperparameter Tuning:</strong> LR {1e−2,1e−3,1e−4}; hidden sizes {64,128,256}; batch sizes {16,32}.</li>
+            <li><strong>Evaluation:</strong> Select best model by validation F1; test on held-out set; record metrics.</li>
+        </ol>
+    </section>
+
+    <section>
+        <h2>6. Methods of Result Visualization</h2>
+        <ul>
+            <li>Learning curves: loss &amp; accuracy vs. epochs (Matplotlib)</li>
+            <li>Confusion matrix heatmap (Seaborn)</li>
+            <li>Per-class metrics bar chart: precision, recall, F1</li>
+            <li>Sample sequence predictions: overlay labels on video frames</li>
+            <li>Training time &amp; model size table</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>7. Definition of Quality Measures</h2>
+        <ul>
+            <li><strong>Accuracy:</strong> Correct classifications / total samples</li>
+            <li><strong>Precision:</strong> TP / (TP + FP) per class</li>
+            <li><strong>Recall:</strong> TP / (TP + FN) per class</li>
+            <li><strong>F1-Score:</strong> 2×(Precision×Recall)/(Precision+Recall)</li>
+            <li><strong>Confusion Matrix Analysis:</strong> Identify common errors</li>
+            <li><strong>Efficiency:</strong> Parameter count, FLOPs, inference time</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>8. Phase 1 Deliverables</h2>
+        <ul>
+            <li>Written PDF report with sections 1–7</li>
+            <li>5–7 slide deck for consultation (May 12), covering all above</li>
+            <li>Discussion points: preprocessing, architectures, computational requirements</li>
+        </ul>
+    </section>
+
+</body>
+</html>
