@@ -1,3 +1,0 @@
-Timestamp: 2025-05-19 14:42:40.720912
-Prediction: thumb
-Confidence: 0.2833

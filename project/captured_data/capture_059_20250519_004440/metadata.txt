@@ -1,3 +1,0 @@
-Prediction: wave
-Confidence: 0.9691
-Timestamp: 20250519_004440

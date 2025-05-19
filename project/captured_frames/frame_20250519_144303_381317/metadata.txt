@@ -1,3 +1,0 @@
-Timestamp: 2025-05-19 14:43:03.381317
-Prediction: down
-Confidence: 0.3966
