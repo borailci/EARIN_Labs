@@ -17,16 +17,21 @@ from dataset import get_class_names, LeapGestRecogDataset
 
 # Import performance metrics from utils
 try:
-    from utils.performance_metrics import calculate_detailed_metrics, confidence_histogram
+    from utils.performance_metrics import (
+        calculate_detailed_metrics,
+        confidence_histogram,
+    )
 except ImportError:
-    print("Performance metrics module not found. Some advanced analytics will be disabled.")
-    
+    print(
+        "Performance metrics module not found. Some advanced analytics will be disabled."
+    )
+
 # Configure matplotlib for better visualization
 try:
-    plt.style.use('seaborn-v0_8-darkgrid')  # For newer matplotlib versions
+    plt.style.use("seaborn-v0_8-darkgrid")  # For newer matplotlib versions
 except:
     try:
-        plt.style.use('seaborn-darkgrid')  # For older matplotlib versions
+        plt.style.use("seaborn-darkgrid")  # For older matplotlib versions
     except:
         print("Could not set seaborn style, using default style.")
 
@@ -41,9 +46,11 @@ class DatasetTester:
         self.model = get_model(num_classes=10, hidden_size=128).to(self.device)
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()
-        
+
         # Profile model parameters
-        self.model_size = sum(p.numel() for p in self.model.parameters()) / 1e6  # in millions
+        self.model_size = (
+            sum(p.numel() for p in self.model.parameters()) / 1e6
+        )  # in millions
         print(f"Model parameters: {self.model_size:.2f}M")
 
         # Get class names
@@ -69,10 +76,10 @@ class DatasetTester:
             num_workers=0,  # Set to 0 to avoid multiprocessing issues
             pin_memory=True,
         )
-        
+
         # Track inference timings for performance metrics
         self.inference_times = []
-        
+
         # Results cache to avoid redundant processing
         self.results_cache = {}
 
@@ -80,45 +87,45 @@ class DatasetTester:
     def predict(self, image_tensor):
         """
         Make prediction on a single image with performance tracking.
-        
+
         Args:
             image_tensor (torch.Tensor): Input image tensor
-            
+
         Returns:
             tuple: (predicted_class_name, confidence, inference_time)
         """
         # Convert tensor to hashable form for cache check
         image_hash = image_tensor.cpu().numpy().tobytes()
-        
+
         # Check cache first
         if image_hash in self.results_cache:
             return self.results_cache[image_hash]
-        
+
         # Time the inference
         start_time = time.time()
-        
+
         with torch.no_grad():
             outputs = self.model(image_tensor)
             probabilities = torch.nn.functional.softmax(outputs, dim=1)
             confidence, predicted = torch.max(probabilities, 1)
-        
+
         inference_time = (time.time() - start_time) * 1000  # Convert to ms
         self.inference_times.append(inference_time)
-        
+
         # Get predicted class name
         predicted_class = self.class_names[predicted.item()]
         confidence_value = confidence.item()
-        
+
         # Only consider high confidence predictions as valid
         if confidence_value < 0.5:
             result_class = "uncertain"
         else:
             result_class = predicted_class
-            
+
         # Store in cache
         result = (result_class, confidence_value, inference_time)
         self.results_cache[image_hash] = result
-        
+
         return result
 
     def create_results_visualization(self, results):
@@ -301,9 +308,9 @@ class DatasetTester:
 
     def visualize_calibration(self, confidences, correct_predictions, output_dir=None):
         """
-        Create and save a calibration plot showing how well model confidence 
+        Create and save a calibration plot showing how well model confidence
         correlates with actual accuracy.
-        
+
         Args:
             confidences (list): List of confidence values
             correct_predictions (list): List of booleans indicating correct predictions
@@ -314,56 +321,60 @@ class DatasetTester:
             bin_edges, accuracies, counts = confidence_histogram(
                 confidences, correct_predictions, n_bins=10
             )
-            
+
             # Create figure
             fig, ax1 = plt.subplots(figsize=(10, 6))
-            
+
             # Plot histograms of sample counts
             ax1.bar(
-                (bin_edges[:-1] + bin_edges[1:]) / 2, 
-                counts, 
-                width=0.08, 
-                alpha=0.5, 
-                color='blue', 
-                label='Sample Count'
+                (bin_edges[:-1] + bin_edges[1:]) / 2,
+                counts,
+                width=0.08,
+                alpha=0.5,
+                color="blue",
+                label="Sample Count",
             )
-            ax1.set_ylabel('Sample Count', color='blue')
-            ax1.tick_params(axis='y', labelcolor='blue')
-            
+            ax1.set_ylabel("Sample Count", color="blue")
+            ax1.tick_params(axis="y", labelcolor="blue")
+
             # Add second y-axis for accuracy
             ax2 = ax1.twinx()
             ax2.plot(
-                (bin_edges[:-1] + bin_edges[1:]) / 2, 
-                accuracies, 
-                'r-o', 
-                label='Accuracy'
+                (bin_edges[:-1] + bin_edges[1:]) / 2,
+                accuracies,
+                "r-o",
+                label="Accuracy",
             )
             # Add perfect calibration line
-            ax2.plot([0, 1], [0, 1], 'k--', label='Perfect Calibration')
+            ax2.plot([0, 1], [0, 1], "k--", label="Perfect Calibration")
             ax2.set_ylim([0, 1.05])
-            ax2.set_ylabel('Accuracy', color='red')
-            ax2.tick_params(axis='y', labelcolor='red')
-            
+            ax2.set_ylabel("Accuracy", color="red")
+            ax2.tick_params(axis="y", labelcolor="red")
+
             # Add details
-            plt.title('Model Calibration: Confidence vs. Accuracy')
-            plt.xlabel('Confidence')
-            
+            plt.title("Model Calibration: Confidence vs. Accuracy")
+            plt.xlabel("Confidence")
+
             # Add legend with both axes
             lines1, labels1 = ax1.get_legend_handles_labels()
             lines2, labels2 = ax2.get_legend_handles_labels()
-            ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
-            
-            plt.grid(True, linestyle='--', alpha=0.6)
+            ax2.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+
+            plt.grid(True, linestyle="--", alpha=0.6)
             plt.tight_layout()
-            
+
             # Save if output directory specified
             if output_dir:
                 os.makedirs(output_dir, exist_ok=True)
-                plt.savefig(os.path.join(output_dir, 'calibration_plot.png'), dpi=300, bbox_inches='tight')
+                plt.savefig(
+                    os.path.join(output_dir, "calibration_plot.png"),
+                    dpi=300,
+                    bbox_inches="tight",
+                )
                 plt.close()
             else:
                 plt.show()
-                
+
         except Exception as e:
             print(f"Could not generate calibration plot: {e}")
 
@@ -371,10 +382,10 @@ class DatasetTester:
         """
         Efficiently test the model using batches for faster processing.
         Useful for large test sets.
-        
+
         Args:
             batch_size (int): Batch size for testing
-            
+
         Returns:
             dict: Dictionary with test metrics
         """
@@ -386,14 +397,14 @@ class DatasetTester:
             num_workers=2,  # Use more workers for batch processing
             pin_memory=True,
         )
-        
+
         # Track metrics
         all_preds = []
         all_labels = []
         all_confidences = []
         total_time = 0
         total_samples = 0
-        
+
         # Process batches
         self.model.eval()
         with torch.no_grad():
@@ -401,28 +412,28 @@ class DatasetTester:
                 # Move to device
                 images = images.to(self.device)
                 labels = labels.to(self.device)
-                
+
                 # Time inference
                 start_time = time.time()
                 outputs = self.model(images)
                 batch_time = time.time() - start_time
                 total_time += batch_time
-                
+
                 # Get predictions
                 probabilities = torch.nn.functional.softmax(outputs, dim=1)
                 confidences, predictions = torch.max(probabilities, 1)
-                
+
                 # Store results
                 all_preds.extend(predictions.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
                 all_confidences.extend(confidences.cpu().numpy())
                 total_samples += images.size(0)
-        
+
         # Calculate metrics
         correct = sum(np.array(all_preds) == np.array(all_labels))
         accuracy = correct / total_samples
         avg_time_per_sample = total_time * 1000 / total_samples  # in ms
-        
+
         # Generate detailed metrics if available
         try:
             detailed_metrics = calculate_detailed_metrics(
@@ -430,26 +441,26 @@ class DatasetTester:
             )
         except:
             detailed_metrics = {"accuracy": accuracy}
-        
+
         # Add timing information
         detailed_metrics["avg_inference_time_ms"] = avg_time_per_sample
         detailed_metrics["total_samples"] = total_samples
         detailed_metrics["confidences"] = all_confidences
-        
+
         print(f"\nBatch Testing Results:")
         print(f"Overall Accuracy: {accuracy:.4f}")
         print(f"Average inference time: {avg_time_per_sample:.2f}ms per sample")
-        
+
         return detailed_metrics
 
     def test_and_visualize(self, num_samples=100, output_dir=None):
         """
         Test the model on the test set and visualize results with enhanced metrics
-        
+
         Args:
             num_samples (int): Number of samples to test
             output_dir (str, optional): Directory to save results and visualizations
-        
+
         Returns:
             dict: Test metrics and results
         """
@@ -458,7 +469,7 @@ class DatasetTester:
         total = 0
         class_correct = {name: 0 for name in self.class_names.values()}
         class_total = {name: 0 for name in self.class_names.values()}
-        
+
         # Track additional metrics
         confidences = []
         correct_predictions = []
@@ -484,22 +495,23 @@ class DatasetTester:
             # Check if prediction is correct
             true_class = self.class_names[label.item()]
             is_correct = pred_class == true_class
-            
+
             # Update counters
             if is_correct:
                 correct += 1
                 class_correct[true_class] += 1
             total += 1
             class_total[true_class] += 1
-            
+
             # Track metrics
             confidences.append(confidence)
             correct_predictions.append(is_correct)
             inference_times.append(pred_time)
             true_labels.append(label.item())
             predicted_labels.append(
-                list(self.class_names.values()).index(pred_class) 
-                if pred_class in self.class_names.values() else -1
+                list(self.class_names.values()).index(pred_class)
+                if pred_class in self.class_names.values()
+                else -1
             )
 
             # Store result
@@ -510,7 +522,7 @@ class DatasetTester:
                     "pred": pred_class,
                     "conf": confidence,
                     "correct": is_correct,
-                    "inference_time": pred_time
+                    "inference_time": pred_time,
                 }
             )
 
@@ -518,7 +530,7 @@ class DatasetTester:
         accuracy = correct / total if total > 0 else 0
         avg_inference_time = np.mean(inference_times)
         total_test_time = time.time() - start_time
-        
+
         # Create output directory if specified
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
@@ -526,11 +538,15 @@ class DatasetTester:
         # Print detailed summary
         # Get memory usage
         mem_usage = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
-        
+
         # Get cache stats
         cache_info = self.predict.cache_info()
-        cache_hit_ratio = cache_info.hits / (cache_info.hits + cache_info.misses) if (cache_info.hits + cache_info.misses) > 0 else 0
-        
+        cache_hit_ratio = (
+            cache_info.hits / (cache_info.hits + cache_info.misses)
+            if (cache_info.hits + cache_info.misses) > 0
+            else 0
+        )
+
         print("\n" + "=" * 50)
         print("TEST RESULTS SUMMARY")
         print("=" * 50)
@@ -538,7 +554,9 @@ class DatasetTester:
         print(f"Avg Inference Time: {avg_inference_time:.2f}ms per sample")
         print(f"Total Test Time: {total_test_time:.2f}s")
         print(f"Memory Usage: {mem_usage:.2f} MB")
-        print(f"Cache Hit Ratio: {cache_hit_ratio:.2%} ({cache_info.hits} hits, {cache_info.misses} misses)")
+        print(
+            f"Cache Hit Ratio: {cache_hit_ratio:.2%} ({cache_info.hits} hits, {cache_info.misses} misses)"
+        )
 
         print("\nPer-Class Performance:")
         print("-" * 50)
@@ -550,7 +568,7 @@ class DatasetTester:
                 print(
                     f"{class_name:<15} {class_acc:>8.2%}  ({class_correct[class_name]}/{class_total[class_name]})"
                 )
-        
+
         # Generate calibration plot if performance metrics available
         try:
             if output_dir:
@@ -575,7 +593,7 @@ class DatasetTester:
         viz_path = os.path.join(output_path, "test_results_visualization.png")
         cv2.imwrite(viz_path, visualization)
         print(f"\nVisualization saved as '{viz_path}'")
-        
+
         # Save detailed metrics if output directory specified
         if output_dir:
             # Create metrics summary
@@ -585,18 +603,21 @@ class DatasetTester:
                 "correct_samples": correct,
                 "avg_inference_time_ms": avg_inference_time,
                 "class_accuracy": {
-                    class_name: (class_correct[class_name] / class_total[class_name]) 
-                    if class_total[class_name] > 0 else 0
+                    class_name: (
+                        (class_correct[class_name] / class_total[class_name])
+                        if class_total[class_name] > 0
+                        else 0
+                    )
                     for class_name in self.class_names.values()
                 },
             }
-            
+
             # Save metrics as JSON
             metrics_path = os.path.join(output_dir, "test_metrics.json")
-            with open(metrics_path, 'w') as f:
+            with open(metrics_path, "w") as f:
                 json.dump(metrics, f, indent=2)
             print(f"Detailed metrics saved to {metrics_path}")
-            
+
         # Return consolidated results
         return {
             "accuracy": accuracy,
@@ -604,7 +625,7 @@ class DatasetTester:
             "confidences": confidences,
             "correct_predictions": correct_predictions,
             "true_labels": true_labels,
-            "predicted_labels": predicted_labels
+            "predicted_labels": predicted_labels,
         }
 
 
@@ -656,17 +677,17 @@ def main():
 
     # Create tester
     tester = DatasetTester(args.model_path, args.data_dir)
-    
+
     # Run test based on mode
     if args.batch_mode:
         print(f"Running batch test with batch size {args.batch_size}...")
         metrics = tester.test_batch(batch_size=args.batch_size)
-        
+
         # Save metrics if output directory provided
         if args.output_dir:
             os.makedirs(args.output_dir, exist_ok=True)
             metrics_path = os.path.join(args.output_dir, "batch_test_metrics.json")
-            with open(metrics_path, 'w') as f:
+            with open(metrics_path, "w") as f:
                 # Convert numpy values to Python native types for JSON serialization
                 serializable_metrics = {}
                 for k, v in metrics.items():
@@ -675,7 +696,7 @@ def main():
                             serializable_metrics[k] = v.tolist()
                         else:
                             serializable_metrics[k] = v
-                            
+
                 json.dump(serializable_metrics, f, indent=2)
             print(f"Metrics saved to {metrics_path}")
     else:
