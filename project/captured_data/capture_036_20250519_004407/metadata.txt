@@ -1,0 +1,3 @@
+Prediction: ok_sign
+Confidence: 0.4723
+Timestamp: 20250519_004407

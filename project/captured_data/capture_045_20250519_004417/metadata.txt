@@ -1,0 +1,3 @@
+Prediction: thumb_up
+Confidence: 0.8178
+Timestamp: 20250519_004417
