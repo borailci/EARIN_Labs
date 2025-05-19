@@ -1,188 +1,299 @@
 import os
-import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import numpy as np
-from sklearn.metrics import accuracy_score
-
+from torch.utils.data import DataLoader
 from dataset import get_data_loaders
 from model import get_model
+import argparse
+from tqdm import tqdm
+import numpy as np
+from datetime import datetime
+import json
+import matplotlib.pyplot as plt
+import gc
+import psutil
+import torch.cuda
+from torch.cuda.amp import autocast, GradScaler
+import time
 
 
-def train_one_epoch(model, train_loader, criterion, optimizer, device):
-    """Train the model for one epoch"""
-    model.train()
-    running_loss = 0.0
-    correct = 0
-    total = 0
-
-    for inputs, targets in train_loader:
-        inputs, targets = inputs.to(device), targets.to(device)
-
-        # Forward pass
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, targets)
-
-        # Backward pass
-        loss.backward()
-        optimizer.step()
-
-        # Statistics
-        running_loss += loss.item() * inputs.size(0)
-        _, predicted = outputs.max(1)
-        total += targets.size(0)
-        correct += predicted.eq(targets).sum().item()
-
-    epoch_loss = running_loss / total
-    epoch_acc = correct / total
-
-    return epoch_loss, epoch_acc
+def clear_memory():
+    """Clear unused memory"""
+    gc.collect()
+    torch.cuda.empty_cache()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
 
 
-def validate(model, val_loader, criterion, device):
-    """Validate the model"""
-    model.eval()
-    running_loss = 0.0
-    correct = 0
-    total = 0
-
-    with torch.no_grad():
-        for inputs, targets in val_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-
-            running_loss += loss.item() * inputs.size(0)
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-
-    val_loss = running_loss / total
-    val_acc = correct / total
-
-    return val_loss, val_acc
+def get_memory_usage():
+    """Get current memory usage"""
+    if torch.cuda.is_available():
+        return (
+            torch.cuda.memory_allocated() / 1024**2,
+            torch.cuda.memory_reserved() / 1024**2,
+        )
+    else:
+        process = psutil.Process(os.getpid())
+        return process.memory_info().rss / 1024**2, 0
 
 
-def train_model(data_dir, output_dir, config):
-    """Main training function"""
+def plot_training_history(history, output_dir):
+    """Plot training history including learning rates"""
+    plt.figure(figsize=(15, 10))
+
+    # Plot losses
+    plt.subplot(2, 2, 1)
+    plt.plot(history["train_loss"], label="Train Loss")
+    plt.plot(history["val_loss"], label="Validation Loss")
+    plt.title("Training and Validation Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+
+    # Plot accuracies
+    plt.subplot(2, 2, 2)
+    plt.plot(history["train_acc"], label="Train Accuracy")
+    plt.plot(history["val_acc"], label="Validation Accuracy")
+    plt.title("Training and Validation Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy (%)")
+    plt.legend()
+
+    # Plot learning rates
+    plt.subplot(2, 2, 3)
+    plt.semilogy(history["learning_rates"])
+    plt.title("Learning Rate")
+    plt.xlabel("Epoch")
+    plt.ylabel("Learning Rate (log scale)")
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "training_history.png"))
+    plt.close()
+
+
+def train(args):
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Training on device: {device}")
+    print(f"Using device: {device}")
 
     # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
 
-    # Get data loaders
-    data_loaders = get_data_loaders(data_dir, batch_size=config["batch_size"])
+    # Get data loaders with optimized settings for 24GB memory
+    num_workers = min(4, os.cpu_count())  # Reduced workers
+    data_loaders = get_data_loaders(
+        data_dir=args.data_dir,
+        custom_data_dir=args.custom_data_dir,
+        batch_size=args.batch_size,
+        num_workers=num_workers,
+    )
 
-    # Initialize model
-    model = get_model(
-        num_classes=10, hidden_size=config["hidden_size"], dropout_rate=0.5
-    ).to(device)
-    print(f"Model initialized")
+    # Initialize model with gradient checkpointing
+    model = get_model(num_classes=10, hidden_size=args.hidden_size).to(device)
+    model.use_checkpointing = True  # Enable gradient checkpointing
+    print(
+        f"Model initialized with {sum(p.numel() for p in model.parameters())} parameters"
+    )
 
     # Loss function and optimizer
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(
-        model.parameters(), lr=config["learning_rate"], weight_decay=1e-4
-    )
-    scheduler = ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=3, min_lr=1e-6
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=2, min_lr=1e-6, threshold=1e-4
     )
 
-    # Initialize training variables
-    best_val_loss = float("inf")
+    # Initialize gradient scaler for mixed precision training
+    scaler = GradScaler()
+
+    # Training history
+    history = {
+        "train_loss": [],
+        "train_acc": [],
+        "val_loss": [],
+        "val_acc": [],
+        "learning_rates": [],
+        "best_val_loss": float("inf"),
+    }
+
+    # Training loop
     best_val_acc = 0.0
-    patience_counter = 0
-    start_time = time.time()
+    for epoch in range(args.epochs):
+        print(f"\nEpoch {epoch+1}/{args.epochs}")
+        epoch_start_time = time.time()
 
-    print("Starting training...")
+        # Clear memory before each epoch
+        clear_memory()
+        mem_used, mem_reserved = get_memory_usage()
+        print(f"Memory usage: {mem_used:.1f}MB used, {mem_reserved:.1f}MB reserved")
 
-    try:
-        for epoch in range(config["max_epochs"]):
-            # Train and validate
-            train_loss, train_acc = train_one_epoch(
-                model, data_loaders["train"], criterion, optimizer, device
+        # Training phase
+        model.train()
+        train_loss = 0.0
+        train_correct = 0
+        train_total = 0
+
+        train_loop = tqdm(data_loaders["train"], desc="Training")
+        for inputs, labels in train_loop:
+            inputs, labels = inputs.to(device, non_blocking=True), labels.to(
+                device, non_blocking=True
             )
-            val_loss, val_acc = validate(model, data_loaders["val"], criterion, device)
 
-            # Update learning rate
-            scheduler.step(val_loss)
-            current_lr = optimizer.param_groups[0]["lr"]
+            optimizer.zero_grad(set_to_none=True)  # More efficient than zero_grad()
 
-            # Print epoch summary
-            print(f"Epoch {epoch+1}/{config['max_epochs']}")
-            print(f"Train Loss: {train_loss:.4f}, Accuracy: {train_acc:.2%}")
-            print(f"Val Loss: {val_loss:.4f}, Accuracy: {val_acc:.2%}")
-            print(f"Learning Rate: {current_lr:.2e}")
-            print("-" * 60)
+            # Use mixed precision training
+            with autocast():
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
 
-            # Save best model
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                best_val_loss = val_loss
-                patience_counter = 0
-                torch.save(
-                    model.state_dict(), os.path.join(output_dir, "best_model.pth")
+            # Scale loss and backpropagate
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+
+            train_loss += loss.item()
+            _, predicted = outputs.max(1)
+            train_total += labels.size(0)
+            train_correct += predicted.eq(labels).sum().item()
+
+            # Update progress bar
+            train_loop.set_postfix(
+                {
+                    "loss": f"{loss.item():.4f}",
+                    "acc": f"{100.*train_correct/train_total:.2f}%",
+                }
+            )
+
+            # Clear memory after each batch
+            del outputs, loss, predicted
+            torch.cuda.empty_cache()  # More efficient than full clear_memory()
+
+        train_loss = train_loss / len(data_loaders["train"])
+        train_acc = 100.0 * train_correct / train_total
+
+        # Validation phase
+        model.eval()
+        val_loss = 0.0
+        val_correct = 0
+        val_total = 0
+
+        with torch.no_grad():
+            val_loop = tqdm(data_loaders["val"], desc="Validation")
+            for inputs, labels in val_loop:
+                inputs, labels = inputs.to(device, non_blocking=True), labels.to(
+                    device, non_blocking=True
                 )
-                print(f"Saved best model with validation accuracy: {val_acc:.2%}")
-            else:
-                patience_counter += 1
-                if patience_counter >= config["patience"]:
-                    print(f"Early stopping at epoch {epoch+1}")
-                    break
 
-    except KeyboardInterrupt:
-        print("Training interrupted by user")
+                # Use mixed precision for validation
+                with autocast():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
 
-    finally:
-        # Print final summary
-        total_time = time.time() - start_time
-        print("\nTraining Complete!")
-        print(f"Total time: {total_time:.2f} seconds")
-        print(f"Best validation accuracy: {best_val_acc:.2%}")
-        print(f"Best validation loss: {best_val_loss:.4f}")
-        print(f"Model saved to: {os.path.join(output_dir, 'best_model.pth')}")
+                val_loss += loss.item()
+                _, predicted = outputs.max(1)
+                val_total += labels.size(0)
+                val_correct += predicted.eq(labels).sum().item()
+
+                # Update progress bar
+                val_loop.set_postfix(
+                    {
+                        "loss": f"{loss.item():.4f}",
+                        "acc": f"{100.*val_correct/val_total:.2f}%",
+                    }
+                )
+
+                # Clear memory after each batch
+                del outputs, loss, predicted
+                torch.cuda.empty_cache()  # More efficient than full clear_memory()
+
+        val_loss = val_loss / len(data_loaders["val"])
+        val_acc = 100.0 * val_correct / val_total
+
+        # Update learning rate
+        old_lr = optimizer.param_groups[0]["lr"]
+        scheduler.step(val_loss)
+        new_lr = optimizer.param_groups[0]["lr"]
+
+        # Print learning rate change if it changed
+        if new_lr != old_lr:
+            print(f"\nLearning rate decreased from {old_lr:.6f} to {new_lr:.6f}")
+            print(
+                f"Validation loss: {val_loss:.4f} (Previous best: {history['best_val_loss']:.4f})"
+            )
+
+        # Update best validation loss
+        if val_loss < history["best_val_loss"]:
+            history["best_val_loss"] = val_loss
+            print(f"New best validation loss: {val_loss:.4f}")
+
+        # Print epoch results
+        epoch_time = time.time() - epoch_start_time
+        print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%")
+        print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%")
+        print(f"Learning Rate: {new_lr:.6f}")
+        print(f"Best Val Loss: {history['best_val_loss']:.4f}")
+        print(f"Epoch time: {epoch_time:.2f} seconds")
+
+        # Update history
+        history["train_loss"].append(train_loss)
+        history["train_acc"].append(train_acc)
+        history["val_loss"].append(val_loss)
+        history["val_acc"].append(val_acc)
+        history["learning_rates"].append(new_lr)
+
+        # Save history to file
+        with open(os.path.join(args.output_dir, "training_history.json"), "w") as f:
+            json.dump(history, f, indent=4)
+
+        # Plot training history
+        plot_training_history(history, args.output_dir)
+
+        # Save best model
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            torch.save(
+                model.state_dict(), os.path.join(args.output_dir, "best_model.pth")
+            )
+            print(f"New best model saved with validation accuracy: {val_acc:.2f}%")
+
+        # Clear memory after each epoch
+        clear_memory()
+
+    print("\nTraining completed!")
+    print(f"Best validation accuracy: {best_val_acc:.2f}%")
 
 
 def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Train a CNN for hand gesture recognition"
+    parser = argparse.ArgumentParser(description="Train hand gesture recognition model")
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        default="data",
+        help="Path to original dataset directory",
     )
     parser.add_argument(
-        "--data_dir", type=str, default="./data", help="Path to data directory"
+        "--custom_data_dir",
+        type=str,
+        default="dataset/custom",
+        help="Path to custom captured dataset directory",
     )
     parser.add_argument(
-        "--output_dir", type=str, default="./results", help="Path to save output"
+        "--output_dir",
+        type=str,
+        default="results",
+        help="Directory to save model and results",
     )
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=5e-4, help="Learning rate")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size")
     parser.add_argument(
         "--hidden_size", type=int, default=128, help="Hidden layer size"
     )
     parser.add_argument(
-        "--epochs", type=int, default=50, help="Maximum number of epochs"
-    )
-    parser.add_argument(
-        "--patience", type=int, default=5, help="Early stopping patience"
+        "--epochs", type=int, default=3, help="Maximum number of epochs"
     )
 
     args = parser.parse_args()
-
-    config = {
-        "learning_rate": args.lr,
-        "batch_size": args.batch_size,
-        "hidden_size": args.hidden_size,
-        "max_epochs": args.epochs,
-        "patience": args.patience,
-    }
-
-    train_model(args.data_dir, args.output_dir, config)
+    train(args)
 
 
 if __name__ == "__main__":

@@ -13,14 +13,16 @@ torch.multiprocessing.set_sharing_strategy("file_system")  # Prevent sharing iss
 
 
 class LeapGestRecogDataset(Dataset):
-    def __init__(self, data_dir, transform=None, mode="train"):
+    def __init__(self, data_dir, custom_data_dir=None, transform=None, mode="train"):
         """
         Args:
-            data_dir (str): Directory with all gesture classes
+            data_dir (str): Directory with original gesture classes
+            custom_data_dir (str): Directory with custom captured gesture classes
             transform (callable, optional): Optional transform to be applied on a sample
             mode (str): 'train', 'val', or 'test'
         """
         self.data_dir = data_dir
+        self.custom_data_dir = custom_data_dir
         self.transform = transform
         self.mode = mode
 
@@ -42,27 +44,12 @@ class LeapGestRecogDataset(Dataset):
             "10": "down",
         }
 
-        # Collect all image paths and labels
-        for folder_idx in range(10):  # 10 main folders (00 to 09)
-            folder = f"{folder_idx:02d}"
-            folder_path = os.path.join(data_dir, folder)
+        # Load original dataset
+        self._load_dataset(data_dir)
 
-            if os.path.exists(folder_path):
-                # Find all PNG files in this folder and its subdirectories
-                frames = glob.glob(
-                    os.path.join(folder_path, "**/*.png"), recursive=True
-                )
-
-                for frame_path in frames:
-                    frame_name = os.path.basename(frame_path)
-                    # Extract class number from filename using regex
-                    match = re.match(r"^frame_\d+_(\d+)_\d+\.png$", frame_name)
-                    if match:
-                        class_num = match.group(1).zfill(2)
-                        if class_num in self.class_names:
-                            self.image_paths.append(frame_path)
-                            class_idx = int(class_num) - 1
-                            self.labels.append(class_idx)
+        # Load custom dataset if provided
+        if custom_data_dir and os.path.exists(custom_data_dir):
+            self._load_dataset(custom_data_dir)
 
         # Convert labels to tensor for faster access
         self.labels = torch.tensor(self.labels, dtype=torch.long)
@@ -101,6 +88,55 @@ class LeapGestRecogDataset(Dataset):
             print(f"Warning: No images found in {data_dir}")
             self.images = None
 
+    def _load_dataset(self, data_dir):
+        """Load images and labels from a dataset directory"""
+        print(f"\nLoading dataset from: {data_dir}")
+        total_images = 0
+        class_counts = {i: 0 for i in range(10)}  # Count images per class
+
+        # Both datasets use 00-09 folders
+        for folder_idx in range(10):  # 00-09
+            folder = f"{folder_idx:02d}"
+            folder_path = os.path.join(data_dir, folder)
+
+            if os.path.exists(folder_path):
+                # Find all PNG files in this folder and its subdirectories
+                frames = glob.glob(
+                    os.path.join(folder_path, "**/*.png"), recursive=True
+                )
+
+                print(f"Found {len(frames)} images in folder {folder}")
+
+                for frame_path in frames:
+                    frame_name = os.path.basename(frame_path)
+                    # Extract class number from filename using regex
+                    match = re.match(r"^frame_\d+_(\d+)_\d+\.png$", frame_name)
+                    if match:
+                        class_num = match.group(1).zfill(2)
+                        if class_num in self.class_names:
+                            self.image_paths.append(frame_path)
+                            class_idx = int(class_num) - 1  # Convert to 0-based index
+                            self.labels.append(class_idx)
+                            class_counts[class_idx] += 1
+                            total_images += 1
+                        else:
+                            print(
+                                f"Warning: Invalid class number {class_num} in file {frame_name}"
+                            )
+                    else:
+                        print(
+                            f"Warning: Filename {frame_name} doesn't match expected pattern"
+                        )
+
+        print(f"\nDataset Summary for {data_dir}:")
+        print(f"Total images loaded: {total_images}")
+        print("Images per class:")
+        for class_idx, count in class_counts.items():
+            class_name = self.class_names[
+                f"{class_idx+1:02d}"
+            ]  # Add 1 to convert from 0-based to 1-based index
+            print(f"  {class_name}: {count} images")
+
     def __len__(self):
         return len(self.indices)
 
@@ -126,13 +162,15 @@ class LeapGestRecogDataset(Dataset):
         return image, label
 
 
-def get_data_loaders(data_dir, batch_size=32):
+def get_data_loaders(data_dir, custom_data_dir=None, batch_size=32, num_workers=4):
     """
     Create data loaders for train, validation, and test sets
 
     Args:
-        data_dir (str): Path to data directory
+        data_dir (str): Path to original data directory
+        custom_data_dir (str): Path to custom captured data directory
         batch_size (int): Batch size for data loaders
+        num_workers (int): Number of worker processes for data loading
 
     Returns:
         dict: Dictionary containing data loaders
@@ -143,32 +181,28 @@ def get_data_loaders(data_dir, batch_size=32):
             transforms.Resize((64, 64)),
             transforms.RandomApply(
                 [
-                    transforms.RandomRotation(15),  # Reduced rotation angle
+                    transforms.RandomRotation(15),
                     transforms.RandomAffine(
                         degrees=0,
-                        translate=(0.1, 0.1),  # Reduced translation
-                        scale=(0.9, 1.1),  # Reduced scale range
-                        shear=10,  # Reduced shear
+                        translate=(0.1, 0.1),
+                        scale=(0.9, 1.1),
+                        shear=10,
                     ),
                 ],
-                p=0.5,  # Reduced probability
+                p=0.5,
             ),
-            transforms.RandomHorizontalFlip(p=0.3),  # Reduced flip probability
+            transforms.RandomHorizontalFlip(p=0.3),
             transforms.RandomApply(
                 [
-                    transforms.GaussianBlur(
-                        kernel_size=3, sigma=(0.1, 1.0)
-                    ),  # Reduced blur
+                    transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),
                 ],
-                p=0.2,  # Reduced probability
+                p=0.2,
             ),
             transforms.RandomApply(
                 [
-                    transforms.ColorJitter(
-                        brightness=0.2, contrast=0.2
-                    ),  # Reduced jitter
+                    transforms.ColorJitter(brightness=0.2, contrast=0.2),
                 ],
-                p=0.2,  # Reduced probability
+                p=0.2,
             ),
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,)),
@@ -184,15 +218,16 @@ def get_data_loaders(data_dir, batch_size=32):
         ]
     )
 
-    # Get number of CPU cores for data loading
-    num_workers = min(8, os.cpu_count())
-
     # Create datasets with appropriate transforms
     train_dataset = LeapGestRecogDataset(
-        data_dir, transform=train_transform, mode="train"
+        data_dir, custom_data_dir, transform=train_transform, mode="train"
     )
-    val_dataset = LeapGestRecogDataset(data_dir, transform=eval_transform, mode="val")
-    test_dataset = LeapGestRecogDataset(data_dir, transform=eval_transform, mode="test")
+    val_dataset = LeapGestRecogDataset(
+        data_dir, custom_data_dir, transform=eval_transform, mode="val"
+    )
+    test_dataset = LeapGestRecogDataset(
+        data_dir, custom_data_dir, transform=eval_transform, mode="test"
+    )
 
     # Create data loaders with optimized settings
     train_loader = DataLoader(
@@ -202,28 +237,28 @@ def get_data_loaders(data_dir, batch_size=32):
         num_workers=num_workers,
         pin_memory=True,
         drop_last=True,
-        persistent_workers=True,  # Keep workers alive between epochs
-        prefetch_factor=2,  # Prefetch 2 batches per worker
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2 if num_workers > 0 else None,
     )
 
     val_loader = DataLoader(
         val_dataset,
-        batch_size=batch_size * 2,  # Larger batch size for validation
+        batch_size=batch_size * 2,
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
-        persistent_workers=True,
-        prefetch_factor=2,
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2 if num_workers > 0 else None,
     )
 
     test_loader = DataLoader(
         test_dataset,
-        batch_size=batch_size * 2,  # Larger batch size for testing
+        batch_size=batch_size * 2,
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
-        persistent_workers=True,
-        prefetch_factor=2,
+        persistent_workers=num_workers > 0,
+        prefetch_factor=2 if num_workers > 0 else None,
     )
 
     print(f"\nDataloader Configuration:")
@@ -237,16 +272,16 @@ def get_data_loaders(data_dir, batch_size=32):
 
 
 def get_class_names():
-    """Return the mapping of class indices to human-readable names"""
+    """Get the mapping of class indices to class names"""
     return {
-        0: "palm",  # 01
-        1: "l",  # 02
-        2: "fist",  # 03
-        3: "fist_moved",  # 04
-        4: "thumb",  # 05
-        5: "index",  # 06
-        6: "ok",  # 07
-        7: "palm_moved",  # 08
-        8: "c",  # 09
-        9: "down",  # 10
+        "01": "palm",
+        "02": "l",
+        "03": "fist",
+        "04": "fist_moved",
+        "05": "thumb",
+        "06": "index",
+        "07": "ok",
+        "08": "palm_moved",
+        "09": "c",
+        "10": "down",
     }
