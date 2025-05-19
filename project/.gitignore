@@ -1,0 +1,72 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Data directories
+data/
+captured_data/
+captured_frames/
+test_output/
+test_results/
+# results/  # Uncommented to allow tracking of model files in results directory
+
+# Exclude large data files but keep models
+# *.pth  # Commented out to allow model files
+# *.onnx
+# *.pb
+# *.h5
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Visualization outputs
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Log files
+*.log
+logs/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Cached files
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+tmp/
+
+# CSV and other data files
+*.csv
+*.json
+*.pkl
+*.npy
+*.npz
