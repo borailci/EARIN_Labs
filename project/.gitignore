@@ -1,4 +1,9 @@
-# Python bytecode files
+# Python virtual environment
+venv/
+env/
+ENV/
+
+# Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -8,10 +13,32 @@ dist/
 build/
 *.egg-info/
 
-# Virtual environments
-venv/
-env/
-ENV/
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Large model files and datasets
+*.pth
+*.h5
+*.ckpt
+*.dylib
+*.so
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
 
 # Data directories
 data/
@@ -42,7 +69,6 @@ test_results/
 logs/
 
 # macOS system files
-.DS_Store
 .AppleDouble
 .LSOverride
 Icon
@@ -54,15 +80,8 @@ Icon
 .coverage
 htmlcov/
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
-
 # Temporary files
 *.tmp
-tmp/
 
 # CSV and other data files
 *.csv
