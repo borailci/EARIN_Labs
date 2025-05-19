@@ -4,6 +4,7 @@ import numpy as np
 import mediapipe as mp
 import time
 from datetime import datetime
+from dataset import get_class_names
 
 
 class DatasetCapture:
@@ -55,24 +56,6 @@ class DatasetCapture:
         }
 
         # Load reference images
-        self.reference_images = {}
-        reference_dir = "reference_images"
-        if not os.path.exists(reference_dir):
-            os.makedirs(reference_dir)
-            print(f"\nPlease add reference images in the '{reference_dir}' directory:")
-            for gesture_id, gesture_name in self.gestures.items():
-                print(f"  {gesture_id:02d}_{gesture_name}.jpg")
-        else:
-            for gesture_id, gesture_name in self.gestures.items():
-                img_path = os.path.join(
-                    reference_dir, f"{gesture_id:02d}_{gesture_name}.jpg"
-                )
-                if os.path.exists(img_path):
-                    self.reference_images[gesture_id] = cv2.imread(img_path)
-                else:
-                    print(
-                        f"Warning: Reference image missing for {gesture_name}: {img_path}"
-                    )
 
         # Create main gesture folders (00-09)
         for i in range(10):
@@ -136,13 +119,30 @@ class DatasetCapture:
         if not os.path.exists(gesture_dir):
             os.makedirs(gesture_dir)
 
+        # Find the next available sequence number
+        existing_frames = [
+            f
+            for f in os.listdir(gesture_dir)
+            if f.startswith(f"frame_{main_id:02d}_{gesture_id:02d}_")
+        ]
+        if existing_frames:
+            last_seq = max(
+                [int(f.split("_")[3].split(".")[0]) for f in existing_frames]
+            )
+            next_seq = last_seq + 1
+        else:
+            next_seq = 1
+
         # Generate filename in the exact format: frame_XX_YY_ZZZZ.png
         # XX: main folder number (00-09)
         # YY: gesture number (01-10)
-        # ZZZZ: frame number (0001-0100)
-        filename = f"frame_{main_id:02d}_{gesture_id:02d}_{self.current_sequence_count + 1:04d}.png"
+        # ZZZZ: frame number (continues from last sequence)
+        filename = f"frame_{main_id:02d}_{gesture_id:02d}_{next_seq:04d}.png"
         filepath = os.path.join(gesture_dir, filename)
         cv2.imwrite(filepath, roi)
+
+        # Update sequence count for progress tracking
+        self.current_sequence_count = next_seq - 1
 
         return True
 
@@ -223,15 +223,6 @@ class DatasetCapture:
                         2,
                     )
 
-                # Show reference image if available
-                if self.current_gesture in self.reference_images:
-                    ref_img = self.reference_images[self.current_gesture]
-                    ref_img = cv2.resize(ref_img, (200, 200))
-                    h, w = ref_img.shape[:2]
-                    frame[
-                        10 : 10 + h, frame.shape[1] - w - 10 : frame.shape[1] - 10
-                    ] = ref_img
-
             # Show capture count
             cv2.putText(
                 frame,
@@ -293,11 +284,12 @@ class DatasetCapture:
                     for main_id in range(10):
                         if self.save_image(roi, main_id, self.current_gesture):
                             self.capture_count += 1
-                            self.current_sequence_count += 1
-                            print(
-                                f"\rCapturing frame {self.current_sequence_count}/{self.frames_per_sequence} for sequence {self.current_sequence + 1}/{self.sequences_per_gesture}",
-                                end="",
-                            )
+                    self.current_sequence_count += 1
+                    print(
+                        f"\rCapturing frame {self.current_sequence_count}/{self.frames_per_sequence} for sequence {self.current_sequence + 1}/{self.sequences_per_gesture}",
+                        end="",
+                        flush=True,
+                    )
                     self.last_capture_time = current_time
 
                     if self.current_sequence_count >= self.frames_per_sequence:
@@ -324,22 +316,9 @@ class DatasetCapture:
 
 
 def main():
-    """Main function to run the dataset capture tool"""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Capture hand gesture dataset")
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        default="custom_data",
-        help="Directory to save captured images",
-    )
-
-    args = parser.parse_args()
-
-    # Initialize and run capture tool
-    capture_tool = DatasetCapture(output_dir=args.output_dir)
-    capture_tool.run()
+    # Create and run dataset capture
+    capture = DatasetCapture()
+    capture.run()
 
 
 if __name__ == "__main__":
