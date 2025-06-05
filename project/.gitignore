@@ -60,3 +60,4 @@ checkpoints/
 
 capture_dataset.py
 generate_dataset.py
+scientific_paper.tex
