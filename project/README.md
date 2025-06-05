@@ -74,8 +74,8 @@ This system combines MediaPipe hand detection with a custom CNN architecture to 
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/your-username/hand-gesture-recognition.git
-cd hand-gesture-recognition
+git clone https://github.com/borailci/EARIN_Labs.git
+cd EARIN_Labs/project
 ```
 
 2. **Create and activate virtual environment:**
@@ -117,10 +117,13 @@ python realtime_recognition.py --model_path ./results/best_model.pth --camera 0
 1. **Prepare dataset:**
 
 ```bash
-# Generate custom dataset (interactive)
-python generate_dataset.py --output_dir ./custom_data --user_name user1
+# The custom dataset is already available in ./custom_data/ directory
+# with 10 users (00-09) and 10 gesture classes each
+# Original dataset is available in ./data/ directory
 
-# Or use existing dataset structure
+# To view dataset structure:
+ls -la ./custom_data/  # Custom data from 10 users
+ls -la ./data/         # Original Kaggle dataset
 ```
 
 2. **Train model:**
@@ -139,15 +142,21 @@ python train.py --resume ./results/checkpoint.pth
 3. **Evaluate model:**
 
 ```bash
-# Comprehensive evaluation
-python evaluate_model.py --model_path ./results/best_model.pth \
-                        --custom_data_dir ./custom_data \
-                        --generate_visualizations \
-                        --benchmark_inference
+# Basic evaluation using existing evaluation utilities
+python -c "
+from utils.model_utils import calculate_model_complexity
+from utils.performance_metrics import evaluate_model_performance
+from model import get_model
+import torch
 
-# Quick evaluation
-python evaluate_model.py --model_path ./results/best_model.pth \
-                        --custom_data_dir ./custom_data
+# Load and evaluate model
+model = get_model()
+model.load_state_dict(torch.load('./results/best_model.pth'))
+print(calculate_model_complexity(model))
+"
+
+# Or use the test application
+python test_app.py --model_path ./results/best_model.pth
 ```
 
 ### Configuration Management
@@ -206,8 +215,7 @@ project/
 ├── 📄 model.py                 # CNN model architecture
 ├── 📄 dataset.py               # Dataset handling and preprocessing
 ├── 📄 realtime_recognition.py  # Real-time recognition system
-├── 📄 generate_dataset.py      # Interactive dataset generation
-├── 📄 evaluate_model.py        # Comprehensive model evaluation
+├── 📄 test_app.py              # Application testing utilities
 ├── 📄 requirements.txt         # Python dependencies
 ├── 📄 README.md               # Project documentation
 ├── 📄 scientific_paper.tex    # Academic paper (LaTeX)
@@ -226,14 +234,15 @@ project/
 │   ├── best_model.pth         # Best trained model
 │   ├── training_history.json  # Training logs
 │   ├── confusion_matrix.png   # Evaluation plots
-│   └── comprehensive_analysis.png
+│   ├── comprehensive_analysis.png # Analysis visualizations
+│   └── model_summary_table.png # Model performance summary
 ├──
 ├── 📁 custom_data/            # User-generated datasets (gathered by authors)
-│   ├── 00/ ... 09/           # User directories
-│   └── [gesture_folders]/     # Gesture class folders
+│   ├── 00/ ... 09/           # 10 different users
+│   └── [01_palm, 02_l, 03_fist, 04_fist_moved, 05_thumb, 06_index, 07_ok, 08_palm_moved, 09_c, 10_down]/
 └──
 └── 📁 data/                   # Original dataset (from Kaggle LeapGestRecog)
-    └── [gesture_classes]/
+    └── 00/ ... 09/           # Gesture class folders
 ```
 
 ## 🏗️ Model Architecture
@@ -337,11 +346,12 @@ F1-Score (macro): 99.8%
 ### Custom Dataset Creation
 
 ```bash
-# Interactive dataset generation
-python generate_dataset.py --output_dir ./my_data --user_name researcher1
+# The project already includes comprehensive custom data from 10 users (00-09)
+# Each user has captured all 10 gesture classes
+# Data is stored in ./custom_data/ with proper structure
 
-# Batch dataset processing
-python generate_dataset.py --batch_mode --gestures palm,fist,thumb
+# To view existing data structure:
+ls -la ./custom_data/
 ```
 
 ### Hyperparameter Optimization
@@ -357,19 +367,21 @@ python train.py --learning_rate 0.0005 --batch_size 64 --dropout 0.4
 ### Model Analysis and Visualization
 
 ```bash
-# Generate comprehensive analysis
-python evaluate_model.py --model_path ./results/best_model.pth \
-                        --config ./config/evaluation_config.yaml \
-                        --generate_visualizations \
-                        --benchmark_inference
-
-# Custom analysis
+# Generate comprehensive analysis using available utilities
 python -c "
-from utils.model_utils import calculate_model_complexity
+from utils.model_utils import calculate_model_complexity, analyze_model_layers
+from utils.performance_metrics import compute_detailed_metrics
 from model import get_model
+import torch
+
 model = get_model()
+model.load_state_dict(torch.load('./results/best_model.pth'))
 print(calculate_model_complexity(model))
+print(analyze_model_layers(model))
 "
+
+# Use test application for model testing
+python test_app.py --model_path ./results/best_model.pth --analyze
 ```
 
 ### Export and Deployment
@@ -473,13 +485,15 @@ python -c "import sys; print(sys.path)"
 If you use this project in your research, please cite:
 
 ```bibtex
-@article{gesture_recognition_2024,
+@techreport{ilci_kara_gesture_recognition_2025,
   title={Real-Time Hand Gesture Recognition Using Deep Convolutional Neural Networks},
-  author={[Your Name]},
-  journal={Course Project - EARIN},
-  year={2024},
-  institution={[Your University]},
-  note={Available at: \url{https://github.com/your-username/hand-gesture-recognition}}
+  author={Ilci, Bora and Kara, Kaan Emre},
+  institution={EARIN Labs - Introduction to Artificial Intelligence, Politechnika Warszawska},
+  year={2025},
+  month={June},
+  type={Academic Course Project},
+  note={GitHub Repository: \url{https://github.com/borailci/EARIN_Labs}},
+  abstract={A comprehensive deep learning system achieving 99.82\% validation accuracy for real-time hand gesture recognition using custom CNN architecture and MediaPipe integration.}
 }
 ```
 
@@ -496,11 +510,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Lead**: [Your Name] - [your.email@university.edu]
-- **Course**: EARIN (Evolutionary Algorithms and Reinforcement Learning in AI)
-- **Institution**: [Your University]
-- **Academic Year**: 2024
+- **Project Lead**: Bora Ilci - bora.ilci@student.pw.edu.pl
+- **Co-Author**: Kaan Emre Kara - kaan.kara@student.pw.edu.pl
+- **Course**: EARIN (Introduction to Artificial Intelligence)
+- **Institution**: Politechnika Warszawska (Warsaw University of Technology)
+- **Academic Year**: 2025
 
 ---
 
-**Note**: This is an academic project developed for educational purposes. The model and techniques can be adapted for research and commercial applications with proper attribution.
+**Note**: This is an academic project developed for the EARIN (Introduction to Artificial Intelligence) course at Politechnika Warszawska. The model and techniques can be adapted for research and commercial applications with proper attribution.
