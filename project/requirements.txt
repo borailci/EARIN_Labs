@@ -1,17 +1,59 @@
-# Core dependencies
-numpy>=1.21.0
-torch>=2.0.0
-torchvision>=0.15.0
-Pillow>=8.0.0  # For PIL/Image processing
-opencv-python>=4.5.0  # For cv2
-mediapipe>=0.8.0  # For hand detection
-scikit-learn>=0.24.0  # For metrics and data splitting
+# Hand Gesture Recognition System - Dependencies
+# 
+# This file specifies all required Python packages for the hand gesture recognition project.
+# Install using: pip install -r requirements.txt
+# 
+# For development: pip install -r requirements.txt --upgrade
+# For production: pip install -r requirements.txt --no-dev
 
-# Visualization and utilities
-matplotlib>=3.4.0
-seaborn>=0.11.0
-tqdm>=4.62.0
-psutil>=5.9.0  # For memory monitoring
+# Core Deep Learning Framework
+torch>=1.12.0
+torchvision>=0.13.0
+torchaudio>=0.12.0  # For complete PyTorch ecosystem
 
-# Optional dependencies
-# onnx>=1.14.0  # Uncomment if model export to ONNX is needed
+# Computer Vision and Image Processing
+opencv-python>=4.6.0  # Computer vision library
+mediapipe>=0.9.0      # Google's ML framework for hand detection
+Pillow>=9.0.0         # PIL for image processing
+imageio>=2.19.0       # Image I/O utilities
+
+# Scientific Computing and Data Analysis
+numpy>=1.21.0         # Numerical computing
+scipy>=1.8.0          # Scientific computing
+pandas>=1.4.0         # Data manipulation and analysis
+scikit-learn>=1.1.0   # Machine learning utilities
+
+# Visualization and Plotting
+matplotlib>=3.5.0     # Plotting library
+seaborn>=0.11.0       # Statistical data visualization
+plotly>=5.8.0         # Interactive plotting (optional)
+
+# Progress Monitoring and Utilities
+tqdm>=4.64.0          # Progress bars
+psutil>=5.9.0         # System and process monitoring
+tensorboard>=2.9.0    # TensorBoard for training visualization
+PyYAML>=6.0           # YAML configuration file support
+
+# Development and Code Quality
+black>=22.0.0         # Code formatter
+flake8>=4.0.0         # Code linting
+pytest>=7.0.0         # Testing framework
+pre-commit>=2.17.0    # Git hooks framework
+
+# Optional GUI and Interactive Features
+PyQt5>=5.15.6         # GUI framework for desktop applications
+jupyter>=1.0.0        # Jupyter notebook support
+ipywidgets>=7.7.0     # Interactive widgets for Jupyter
+
+# Export and Model Deployment (Optional)
+# onnx>=1.12.0          # ONNX model format support
+# onnxruntime>=1.12.0   # ONNX runtime for inference
+# torchserve>=0.6.0     # PyTorch model serving
+
+# Performance Optimization (Optional)
+# numba>=0.56.0         # JIT compilation for numerical functions
+# cupy-cuda11x>=10.0.0  # GPU-accelerated NumPy (for CUDA 11.x)
+
+# Documentation Generation (Optional)
+# sphinx>=4.5.0         # Documentation generation
+# sphinx-rtd-theme>=1.0.0  # Read the Docs theme for Sphinx

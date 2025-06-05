@@ -25,8 +25,8 @@ build/
 Thumbs.db
 
 # Dataset and model files
-dataset/
-captured_data/
+data/
+custom_data/
 *.jpg
 *.png
 *.json
@@ -57,5 +57,6 @@ checkpoints/
 !requirements.txt
 !README.md
 !LICENSE
-!.gitignore
-custom_data/
+
+capture_dataset.py
+generate_dataset.py
