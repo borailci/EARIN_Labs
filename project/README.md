@@ -510,8 +510,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **Project Lead**: Bora Ilci - bora.ilci@student.pw.edu.pl
-- **Co-Author**: Kaan Emre Kara - kaan.kara@student.pw.edu.pl
+- **Project Lead**: Bora Ilci - borailci@outlook.com
+- **Co-Author**: Kaan Emre Kara - kaanemrkara@outlook.com
 - **Course**: EARIN (Introduction to Artificial Intelligence)
 - **Institution**: Politechnika Warszawska (Warsaw University of Technology)
 - **Academic Year**: 2025
